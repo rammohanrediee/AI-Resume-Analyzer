@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+import tomllib
 
 
 class ProjectStructureTests(unittest.TestCase):
@@ -31,6 +32,12 @@ class ProjectStructureTests(unittest.TestCase):
         self.assertTrue(callable(matching.compute_semantic_matches))
         self.assertTrue(callable(parser.parse_resume_document))
         self.assertTrue(callable(resume_analysis.build_full_analysis))
+
+    def test_package_metadata_installs_runtime_dependencies(self):
+        metadata = tomllib.loads((self.PROJECT_ROOT / "pyproject.toml").read_text())
+        self.assertIn("dependencies", metadata["project"]["dynamic"])
+        dependency_file = metadata["tool"]["setuptools"]["dynamic"]["dependencies"]["file"]
+        self.assertEqual(dependency_file, ["requirements.txt"])
 
 
 if __name__ == "__main__":

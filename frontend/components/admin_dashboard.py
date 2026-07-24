@@ -124,7 +124,7 @@ def build_level_mix_chart(dataframe, theme_mode):
     return apply_chart_theme(figure, theme_mode)
 
 
-def render_admin_console(plot_data, users_df, feedback_df, theme_mode):
+def render_admin_console(plot_data, events_df, feedback_df, theme_mode):
     plot_data = plot_data.copy()
     plot_data["resume_score_num"] = pd.to_numeric(plot_data["resume_score"], errors="coerce")
     total_profiles = int(len(plot_data))
@@ -133,7 +133,7 @@ def render_admin_console(plot_data, users_df, feedback_df, theme_mode):
     total_feedback = int(len(feedback_df))
     average_rating = float(pd.to_numeric(feedback_df["Feedback Score"], errors="coerce").dropna().mean()) if total_feedback else 0.0
 
-    st.markdown(section_card("Admin Console v2", "Professional analytics for candidate flow, score quality, geography, and feedback."), unsafe_allow_html=True)
+    st.markdown(section_card("Admin Console", "Anonymous product analytics for score quality, role signals, and feedback."), unsafe_allow_html=True)
     metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
     with metric_col1:
         st.markdown(info_card("Profiles Reviewed", f"{total_profiles}", "Total resumes processed in the system.", "teal"), unsafe_allow_html=True)
@@ -144,7 +144,7 @@ def render_admin_console(plot_data, users_df, feedback_df, theme_mode):
     with metric_col4:
         st.markdown(info_card("Feedback Pulse", f"{average_rating:.1f}/5", "Average feedback rating from submitted reviews.", "teal"), unsafe_allow_html=True)
 
-    dashboard_tabs = st.tabs(["Overview", "Talent Signals", "Geo & Feedback", "Data Tables"])
+    dashboard_tabs = st.tabs(["Overview", "Talent Signals", "Feedback", "Data Tables"])
     with dashboard_tabs[0]:
         overview_col1, overview_col2 = st.columns(2)
         with overview_col1:
@@ -153,33 +153,23 @@ def render_admin_console(plot_data, users_df, feedback_df, theme_mode):
             st.plotly_chart(build_score_distribution_chart(plot_data, theme_mode), width="stretch")
 
     with dashboard_tabs[1]:
-        talent_col1, talent_col2 = st.columns(2)
-        with talent_col1:
-            st.plotly_chart(build_level_mix_chart(plot_data, theme_mode), width="stretch")
-        with talent_col2:
-            st.plotly_chart(build_ranked_bar_chart(plot_data, "City", "Top Candidate Cities", "Sunsetdark", theme_mode), width="stretch")
-        st.plotly_chart(build_ranked_bar_chart(plot_data, "State", "Regional Distribution by State", "Burgyl", theme_mode), width="stretch")
-
+        st.plotly_chart(build_level_mix_chart(plot_data, theme_mode), width="stretch")
     with dashboard_tabs[2]:
-        feedback_col1, feedback_col2 = st.columns(2)
-        with feedback_col1:
-            st.plotly_chart(build_feedback_mix_chart(feedback_df, theme_mode), width="stretch")
-        with feedback_col2:
-            st.plotly_chart(build_ranked_bar_chart(plot_data, "Country", "Country Footprint", "Mint", theme_mode), width="stretch")
+        st.plotly_chart(build_feedback_mix_chart(feedback_df, theme_mode), width="stretch")
 
         st.markdown(section_card("Feedback stream", "Latest comments collected from users."), unsafe_allow_html=True)
         if feedback_df.empty:
             st.info("No feedback has been recorded yet.")
         else:
             recent_feedback = feedback_df.sort_values("Timestamp", ascending=False).head(8)
-            st.dataframe(recent_feedback[["Name", "Feedback Score", "Comments", "Timestamp"]], width="stretch")
+            st.dataframe(recent_feedback[["Feedback Score", "Comments", "Timestamp"]], width="stretch")
 
     with dashboard_tabs[3]:
-        data_tab1, data_tab2 = st.tabs(["Candidate Records", "Feedback Records"])
+        data_tab1, data_tab2 = st.tabs(["Anonymous Analysis Events", "Feedback Records"])
         with data_tab1:
-            st.markdown(section_card("Candidate records", "Detailed candidate and system metadata with CSV export."), unsafe_allow_html=True)
-            st.dataframe(users_df, width="stretch", height=380)
-            st.download_button("Download Candidate Report", data=users_df.to_csv(index=False), file_name="User_Data.csv", mime="text/csv")
+            st.markdown(section_card("Analysis events", "Aggregate product metrics without resume content or personal identifiers."), unsafe_allow_html=True)
+            st.dataframe(events_df, width="stretch", height=380)
+            st.download_button("Download Analysis Events", data=events_df.to_csv(index=False), file_name="analysis_events.csv", mime="text/csv")
         with data_tab2:
             st.markdown(section_card("Feedback records", "All submitted ratings and comments in one table."), unsafe_allow_html=True)
             st.dataframe(feedback_df, width="stretch", height=320)

@@ -1,5 +1,11 @@
 import unittest
+import io
+import shutil
 from unittest.mock import patch
+
+from PIL import Image, ImageDraw, ImageFont
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 from frontend.services.pdf_parser import (
     extract_resume_text,
@@ -73,6 +79,40 @@ class PDFParserTests(unittest.TestCase):
     def test_text_only_interface_remains_compatible(self, extract_result):
         extract_result.return_value.text = "Resume content"
         self.assertEqual(extract_text(b"%PDF-file"), "Resume content")
+
+    @unittest.skipUnless(shutil.which("tesseract"), "Tesseract is required for OCR integration")
+    def test_extracts_a_real_image_only_pdf_with_tesseract(self):
+        image = Image.new("RGB", (1700, 2200), "white")
+        draw = ImageDraw.Draw(image)
+        try:
+            font = ImageFont.truetype("Arial.ttf", 52)
+        except OSError:
+            font = ImageFont.load_default()
+        draw.multiline_text(
+            (120, 150),
+            "RAMU REDDY\nAI ENGINEER\nPython FastAPI SQL\nResume Analyzer",
+            fill="black",
+            font=font,
+            spacing=24,
+        )
+
+        image_buffer = io.BytesIO()
+        image.save(image_buffer, format="PNG")
+        pdf_buffer = io.BytesIO()
+        pdf = canvas.Canvas(pdf_buffer, pagesize=letter)
+        pdf.drawInlineImage(
+            Image.open(io.BytesIO(image_buffer.getvalue())),
+            0,
+            0,
+            width=letter[0],
+            height=letter[1],
+        )
+        pdf.save()
+
+        result = extract_resume_text(pdf_buffer.getvalue())
+        self.assertEqual(result.method, "ocr")
+        self.assertIn("Python", result.text)
+        self.assertIn("FastAPI", result.text)
 
 
 if __name__ == "__main__":

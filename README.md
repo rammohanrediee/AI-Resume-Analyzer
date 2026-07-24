@@ -48,6 +48,7 @@ and file-level ownership map.
 ## Highlights
 
 - Extracts text from digital and scanned PDF resumes, with page-level quality checks and OCR fallback.
+- Parses name, contact details, education, skills, and actual PDF page count from the extracted text.
 - Scores expected resume sections and groups results into readable ATS categories.
 - Compares resumes with job descriptions using embeddings when available and deterministic lexical fallbacks otherwise.
 - Maps prioritized JD capabilities to exact supporting resume lines and reports evidence coverage.
@@ -56,6 +57,7 @@ and file-level ownership map.
 - Generates technical, project, and behavioral interview-practice questions from the JD.
 - Exports a PDF analysis report.
 - Stores local analytics in SQLite or connects to PostgreSQL for shared deployments.
+- Keeps analytics disabled by default and never persists resume files or personal identifiers.
 - Exposes the analysis workflow through a versioned JSON API.
 
 ## How it works
@@ -136,7 +138,7 @@ sequenceDiagram
 | `backend/app/services` | Application-level analysis use cases |
 | `frontend/pages` | Candidate, results, admin, feedback, home, and about views |
 | `frontend/components` | Navigation, report rendering, styles, courses, and admin analytics |
-| `frontend/services` | PDF extraction and SQLite/PostgreSQL persistence |
+| `frontend/services` | PDF extraction and privacy-minimized SQLite/PostgreSQL analytics |
 | `tests` | Unit, API, architecture, package, and navigation checks |
 
 ## Getting started
@@ -165,7 +167,6 @@ cd AI-Resume-Analyzer
 
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
 pip install -e .
 ```
 
@@ -193,12 +194,21 @@ cp .env.example .env
 |---|---:|---|
 | `BACKEND_API_URL` | No | API base URL used by the Streamlit frontend |
 | `SQLITE_DB_PATH` | No | Local SQLite path; defaults to `data/resume_analyzer.db` |
+| `ANALYTICS_ENABLED` | No | Enables anonymous aggregate analytics; defaults to `false` |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | No | PostgreSQL connection settings; provide the complete set |
 | `HF_TOKEN` | No | Higher-rate Hugging Face model downloads |
-| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | No | Single admin login |
-| `ADMIN_CREDENTIALS` | No | Comma-separated `username:password` admin pairs |
+| `API_HOST`, `PORT` | No | Backend bind address and port |
+| `RESUME_API_KEY` | No | Enables bearer-token authentication for API POST requests |
+| `API_RATE_LIMIT_PER_MINUTE` | No | Per-client POST request limit; defaults to 60 |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` | No | Admin login using a salted scrypt password hash |
 
 Never commit `.env`, `.streamlit/secrets.toml`, uploaded resumes, or local database files. They are excluded through `.gitignore`.
+
+Generate an admin password hash without putting the password in shell history:
+
+```bash
+python scripts/hash_admin_password.py
+```
 
 ## Running locally
 
@@ -241,6 +251,7 @@ Example:
 ```bash
 curl -X POST http://127.0.0.1:8001/api/v1/analyses \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $RESUME_API_KEY" \
   -d '{
     "candidate_name": "Asha",
     "resume_text": "Skills: Python, SQL. Built a FastAPI service for analytics reporting.",
@@ -262,10 +273,15 @@ The test suite covers:
 
 - native PDF extraction and text normalization;
 - weak-page OCR selection and fallback behavior;
+- real image-only PDF extraction through Tesseract;
+- privacy-minimized persistence, hashed admin passwords, and deletion;
+- API authentication, payload limits, rate limiting, and deployment configuration;
 - parsing, matching, ATS scoring, evidence mapping, and API behavior;
 - package architecture and frontend navigation.
 
-- CI enforces at least 80% coverage of `backend.app`.
+CI enforces at least 80% coverage of `backend.app`, runs Ruff and `pip-audit`,
+builds the Docker image, starts its backend container, and checks the live
+health endpoint.
 
 Test counts and coverage should be taken from the latest GitHub Actions run
 rather than manually maintained badges.
@@ -279,16 +295,25 @@ Because the frontend and API are separate processes, production deployment shoul
 1. Backend service: `bash start-backend.sh`
 2. Frontend service: `bash start.sh`
 3. Frontend environment: set `BACKEND_API_URL` to the public backend URL
+4. Backend environment: set `API_HOST=0.0.0.0`, `PORT`, and a strong `RESUME_API_KEY`
 
 Use PostgreSQL instead of local SQLite when multiple instances or persistent shared analytics are required.
 
 ## Privacy and responsible use
 
-Resumes contain personal information. For non-local deployments:
+Resume content and uploaded PDF bytes stay in the active Streamlit session and
+are not written to the analytics database. Analytics are disabled by default.
+When explicitly enabled, only anonymous aggregate fields are stored: score,
+page count, role track, candidate level, detected/recommended skills, courses,
+and timestamp.
+
+For non-local deployments:
 
 - Use TLS and access controls.
 - Keep secrets in the deployment platform's secret manager.
-- Define retention and deletion rules for uploaded resumes and analysis records.
+- Define retention rules for anonymous analysis events.
+- Use the admin deletion control to purge current analytics and legacy
+  `user_data`/`user_feedback` tables.
 - Avoid logging raw resume text or credentials.
 - Treat all match scores as guidance, not hiring decisions.
 - Review generated suggestions before using them in an application.
@@ -300,6 +325,8 @@ Resumes contain personal information. For non-local deployments:
 - The tool does not emulate proprietary ATS ranking algorithms.
 - Suggested bullet rewrites require human verification; users should never add unsupported metrics.
 - Semantic results depend on the quality and specificity of both the resume and JD.
+- The built-in API server targets local and lightweight demo deployments. Put
+  it behind a TLS-terminating reverse proxy for any public use.
 
 ## Contributing
 

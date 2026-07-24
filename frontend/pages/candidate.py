@@ -6,13 +6,10 @@ from ..api_client import BackendAPIError, ResumeAnalyzerClient
 from ..components.report import recommended_courses_for
 from ..components.styles import section_card
 from ..services.pdf_parser import extract_resume_text
-from ..services.storage import build_session_record
+from ..services.storage import build_analysis_event
 
 
-def _validate_contact(name: str, email: str, mobile: str, pdf_file) -> bool:
-    if not name.strip() or not email.strip() or not mobile.strip():
-        st.warning("Please fill name, email, and mobile number before analysis.")
-        return False
+def _validate_upload(pdf_file) -> bool:
     if pdf_file is None:
         st.warning("Please upload a PDF resume first.")
         return False
@@ -26,14 +23,7 @@ def render_candidate_page(database, client: ResumeAnalyzerClient):
     )
 
     with st.form("resume_analysis_form"):
-        form_col1, form_col2, form_col3 = st.columns(3)
-        with form_col1:
-            name = st.text_input("Name*")
-        with form_col2:
-            email = st.text_input("Mail*")
-        with form_col3:
-            mobile = st.text_input("Mobile Number*")
-
+        name = st.text_input("Name override (optional)")
         job_description = st.text_area(
             "Target Job Description",
             height=130,
@@ -43,7 +33,7 @@ def render_candidate_page(database, client: ResumeAnalyzerClient):
         submitted = st.form_submit_button("Analyze resume", width="stretch")
 
     if submitted:
-        if not _validate_contact(name, email, mobile, pdf_file):
+        if not _validate_upload(pdf_file):
             return
 
         pdf_content = pdf_file.getvalue()
@@ -55,6 +45,7 @@ def render_candidate_page(database, client: ResumeAnalyzerClient):
                     "resume_text": extraction.text,
                     "resume_skills": [],
                     "job_description": job_description,
+                    "page_count": extraction.page_count,
                 }
                 analysis = client.analyze(**api_payload)
             except BackendAPIError as error:
@@ -65,15 +56,11 @@ def render_candidate_page(database, client: ResumeAnalyzerClient):
                 return
 
         recommended_courses = recommended_courses_for(analysis)
-        contact = {"name": name, "email": email, "mobile": mobile}
         try:
             database.save_analysis(
-                build_session_record(
-                    contact=contact,
+                build_analysis_event(
                     analysis=analysis,
                     recommended_courses=recommended_courses,
-                    pdf_name=pdf_file.name,
-                    pdf_content=pdf_content,
                 )
             )
         except Exception as error:

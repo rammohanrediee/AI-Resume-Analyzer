@@ -53,9 +53,13 @@ original project concept.
   Tesseract OCR fallback for weak or image-only pages.
 - Added extraction metadata so the interface records whether a resume used its
   native text layer, OCR, or both.
+- Connected extracted text and actual PDF page count to the structured parser,
+  fixing missing contact, degree, skill, and page metadata in API results.
 - Added PDF report download and a reorganized results experience.
-- Added a storage adapter that supports local SQLite and configured PostgreSQL.
-- Moved credentials and database settings to environment variables.
+- Replaced legacy candidate/PDF/device storage with opt-in anonymous aggregate
+  analytics for SQLite and PostgreSQL.
+- Added salted admin password hashes, login throttling, analytics deletion,
+  API bearer authentication, request limits, and rate limiting.
 
 ### Quality and delivery
 
@@ -64,6 +68,8 @@ original project concept.
 - Added package metadata, Docker configuration, Railway-style configuration,
   environment examples, and startup scripts.
 - Added continuous integration with an enforced backend coverage threshold.
+- Added real Tesseract OCR validation, linting, dependency auditing, Docker
+  builds, and a container health smoke test to continuous integration.
 - Rewrote the documentation around setup, architecture, privacy, limitations,
   and responsible use.
 
@@ -75,7 +81,7 @@ original project concept.
 | `frontend/api_client.py` | Created as part of my re-architecture |
 | `frontend/pages/` | Created as part of my re-architecture |
 | `frontend/services/pdf_parser.py` | Rebuilt as a native-text and page-level OCR extraction pipeline |
-| `frontend/services/storage.py` | Rebuilt persistence layer; concept derives from upstream storage/admin behavior |
+| `frontend/services/storage.py` | Rebuilt as opt-in, privacy-minimized anonymous analytics storage |
 | `frontend/components/report.py` | Created for the new report workflow |
 | `frontend/components/admin_dashboard.py` | Rebuilt from the upstream admin analytics concept |
 | `frontend/components/courses.py` | Adapted from upstream course/video recommendation data |

@@ -19,7 +19,7 @@ def render_about_page():
         <p align='justify'>
             <b>User:</b> Upload a resume, optionally paste a target job description, and review role fit, gaps, and recommendations.<br/><br/>
             <b>Feedback:</b> Share suggestions and usability notes.<br/><br/>
-            <b>Admin:</b> Review historical user data and platform usage trends.
+            <b>Admin:</b> Review anonymous aggregate product metrics and feedback.
         </p>
         """,
         unsafe_allow_html=True,
