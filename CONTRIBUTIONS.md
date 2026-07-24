@@ -83,19 +83,3 @@ original project concept.
 | `tests/` | Created for the re-architected application |
 | `Dockerfile`, `nixpacks.toml`, startup scripts | Created for deployment |
 | `LICENSE` | Retained upstream MIT license and copyright |
-
-## How to discuss this project
-
-Accurate:
-
-> I re-architected an MIT-licensed Streamlit resume analyzer into separate
-> frontend and HTTP API layers. I added evidence-backed JD matching, optional
-> embeddings, database adapters, PDF reporting, tests, and deployment
-> configuration.
-
-Inaccurate:
-
-> I created the original AI Resume Analyzer project.
-
-This distinction is important: the value of this work is in the documented
-re-engineering and added capabilities.
