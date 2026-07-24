@@ -84,10 +84,19 @@ class PDFParserTests(unittest.TestCase):
     def test_extracts_a_real_image_only_pdf_with_tesseract(self):
         image = Image.new("RGB", (1700, 2200), "white")
         draw = ImageDraw.Draw(image)
-        try:
-            font = ImageFont.truetype("Arial.ttf", 52)
-        except OSError:
-            font = ImageFont.load_default()
+        font = None
+        for font_path in (
+            "Arial.ttf",
+            "/System/Library/Fonts/Supplemental/Arial.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        ):
+            try:
+                font = ImageFont.truetype(font_path, 52)
+                break
+            except OSError:
+                continue
+        if font is None:
+            self.skipTest("No suitable TrueType font is available for the OCR fixture")
         draw.multiline_text(
             (120, 150),
             "RAMU REDDY\nAI ENGINEER\nPython FastAPI SQL\nResume Analyzer",
