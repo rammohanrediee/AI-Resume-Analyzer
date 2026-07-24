@@ -9,7 +9,10 @@ WORKDIR /app
 
 COPY requirements.txt /app/requirements.txt
 
-RUN python -m pip install --upgrade pip && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng && \
+    rm -rf /var/lib/apt/lists/* && \
+    python -m pip install --upgrade pip && \
     python -m pip install -r /app/requirements.txt
 
 COPY . /app

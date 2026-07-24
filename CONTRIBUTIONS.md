@@ -48,6 +48,11 @@ original project concept.
 
 - Rebuilt the Streamlit application as separate pages and reusable components.
 - Added API health reporting and a frontend API client.
+- Replaced the legacy `pdfminer3` reader with a page-aware `pdfminer.six`
+  pipeline, extraction-quality checks, resume-safe text normalization, and
+  Tesseract OCR fallback for weak or image-only pages.
+- Added extraction metadata so the interface records whether a resume used its
+  native text layer, OCR, or both.
 - Added PDF report download and a reorganized results experience.
 - Added a storage adapter that supports local SQLite and configured PostgreSQL.
 - Moved credentials and database settings to environment variables.
@@ -69,6 +74,7 @@ original project concept.
 | `backend/` | Created as part of my re-architecture |
 | `frontend/api_client.py` | Created as part of my re-architecture |
 | `frontend/pages/` | Created as part of my re-architecture |
+| `frontend/services/pdf_parser.py` | Rebuilt as a native-text and page-level OCR extraction pipeline |
 | `frontend/services/storage.py` | Rebuilt persistence layer; concept derives from upstream storage/admin behavior |
 | `frontend/components/report.py` | Created for the new report workflow |
 | `frontend/components/admin_dashboard.py` | Rebuilt from the upstream admin analytics concept |

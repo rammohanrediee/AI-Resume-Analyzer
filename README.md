@@ -21,6 +21,8 @@ My work focuses on turning that foundation into a testable, service-oriented
 application. I created or rebuilt:
 
 - a separate frontend and backend package structure;
+- a hybrid PDF extraction pipeline that keeps reliable text-layer output and
+  applies OCR only to weak or image-only pages;
 - a versioned JSON HTTP API with health, analysis, gap, interview-prep, bullet,
   and PDF-report endpoints;
 - resume-to-job evidence mapping that links prioritized requirements to
@@ -45,7 +47,7 @@ and file-level ownership map.
 
 ## Highlights
 
-- Parses PDF resumes and recovers contact details, education, sections, and skills.
+- Extracts text from digital and scanned PDF resumes, with page-level quality checks and OCR fallback.
 - Scores expected resume sections and groups results into readable ATS categories.
 - Compares resumes with job descriptions using embeddings when available and deterministic lexical fallbacks otherwise.
 - Maps prioritized JD capabilities to exact supporting resume lines and reports evidence coverage.
@@ -60,15 +62,19 @@ and file-level ownership map.
 
 ```mermaid
 flowchart LR
-    A[Resume PDF] --> B[Text extraction]
-    B --> C[Parsing and skill normalization]
-    D[Target job description] --> E[Semantic or lexical matching]
-    C --> E
-    C --> F[ATS and bullet checks]
-    E --> G[Evidence map and gap analysis]
-    F --> H[Streamlit report]
-    G --> H
-    H --> I[PDF export]
+    A[Resume PDF] --> B[Native page extraction]
+    B --> C{Text quality}
+    C -->|Usable| D[Normalized page text]
+    C -->|Weak or empty| E[Tesseract OCR]
+    E --> D
+    D --> F[Parsing and skill normalization]
+    G[Target job description] --> H[Semantic or lexical matching]
+    F --> H
+    F --> I[ATS and bullet checks]
+    H --> J[Evidence map and gap analysis]
+    I --> K[Streamlit report]
+    J --> K
+    K --> L[PDF export]
 ```
 
 Semantic matching uses `sentence-transformers/all-MiniLM-L6-v2` when the optional dependency is installed. If the model cannot load, the application falls back to deterministic matching so the main workflow remains available.
@@ -139,12 +145,23 @@ sequenceDiagram
 
 - Python 3.11 or newer
 - `pip` and `venv`
+- Tesseract 5 with English language data for scanned or image-only PDFs
+
+On macOS:
+
+```bash
+brew install tesseract
+```
+
+The Docker image installs Tesseract and its English language data automatically.
+Text-based PDFs do not require OCR; the application keeps their native text
+unless a page fails the extraction-quality check.
 
 ### Installation
 
 ```bash
-git clone https://github.com/ramu-knightOps/Ai_Resume_Analyzer.git
-cd Ai_Resume_Analyzer
+git clone https://github.com/rammohanrediee/AI-Resume-Analyzer.git
+cd AI-Resume-Analyzer
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -241,12 +258,14 @@ coverage run --source=backend.app -m unittest discover -s tests -v
 coverage report -m --fail-under=80
 ```
 
-Current verified result:
+The test suite covers:
 
-- 39 tests passing in a clean Python 3.12 environment.
-- 93% coverage of `backend.app`.
+- native PDF extraction and text normalization;
+- weak-page OCR selection and fallback behavior;
+- parsing, matching, ATS scoring, evidence mapping, and API behavior;
+- package architecture and frontend navigation.
+
 - CI enforces at least 80% coverage of `backend.app`.
-- Coverage includes parsing, matching, ATS scoring, evidence mapping, API behavior, PDF fallback, and package architecture.
 
 Test counts and coverage should be taken from the latest GitHub Actions run
 rather than manually maintained badges.

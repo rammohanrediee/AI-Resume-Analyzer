@@ -5,7 +5,7 @@ import streamlit as st
 from ..api_client import BackendAPIError, ResumeAnalyzerClient
 from ..components.report import recommended_courses_for
 from ..components.styles import section_card
-from ..services.pdf_parser import extract_text
+from ..services.pdf_parser import extract_resume_text
 from ..services.storage import build_session_record
 
 
@@ -49,10 +49,10 @@ def render_candidate_page(database, client: ResumeAnalyzerClient):
         pdf_content = pdf_file.getvalue()
         with st.spinner("Reading your resume and comparing it with the role..."):
             try:
-                resume_text = extract_text(pdf_content)
+                extraction = extract_resume_text(pdf_content)
                 api_payload = {
                     "candidate_name": name,
-                    "resume_text": resume_text,
+                    "resume_text": extraction.text,
                     "resume_skills": [],
                     "job_description": job_description,
                 }
@@ -84,7 +84,20 @@ def render_candidate_page(database, client: ResumeAnalyzerClient):
             "pdf_name": pdf_file.name,
             "pdf_content": pdf_content,
             "api_payload": api_payload,
+            "extraction": {
+                "method": extraction.method,
+                "page_count": extraction.page_count,
+                "ocr_pages": list(extraction.ocr_pages),
+                "warnings": list(extraction.warnings),
+            },
         }
         st.session_state.nav_choice = "Results"
-        st.session_state.analysis_notice = "Analysis complete."
+        if extraction.warnings:
+            extraction_note = "with an extraction warning: " + " ".join(extraction.warnings)
+        elif extraction.method == "native":
+            extraction_note = "using the PDF text layer"
+        else:
+            pages = ", ".join(str(page) for page in extraction.ocr_pages)
+            extraction_note = f"using OCR on page(s) {pages}"
+        st.session_state.analysis_notice = f"Analysis complete {extraction_note}."
         st.rerun()

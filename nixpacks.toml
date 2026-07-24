@@ -2,7 +2,7 @@
 python = {}
 
 [phases.setup]
-nixPkgs = ["python311", "gcc"]
+nixPkgs = ["python311", "gcc", "tesseract"]
 
 [phases.install]
 cmds = [
