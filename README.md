@@ -1,302 +1,304 @@
-<p><small>Best View in <a href="https://github.com/settings/appearance">Light Mode</a> and Desktop Site (Recommended)</small></p><br/>
+# AI Resume Analyzer
 
-![AI-Resume-Analyzer](https://socialify.git.ci/deepakpadhi986/AI-Resume-Analyzer/image?description=1&descriptionEditable=5th%20Sem%20Final%20Year%20Project%20at%20Kirti%20M%20Doongursee%20College%20(2022%20-%2023)&font=Raleway&language=1&pattern=Plus&theme=Light)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-frontend-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Tests](https://github.com/rammohanrediee/AI-Resume-Analyzer/actions/workflows/tests.yml/badge.svg)](https://github.com/rammohanrediee/AI-Resume-Analyzer/actions/workflows/tests.yml)
 
-<div align="center">
-  <h1>🌴 AI RESUME ANALYZER 🌴</h1>
-  <p>A Tool for Resume Analysis, Predictions and Recommendations</p>
-  <!-- Badges -->
-  <p>
-    <img src="https://img.shields.io/github/last-commit/deepakpadhi986/AI-Resume-Analyzer" alt="last update" />
-    <img src="https://badges.frapsoft.com/os/v2/open-source.svg?v=103" alt="open source" />
-    <img src="https://img.shields.io/github/languages/top/deepakpadhi986/AI-Resume-Analyzer?color=red" alt="language" />
-    <img src="https://img.shields.io/github/languages/code-size/deepakpadhi986/AI-Resume-Analyzer?color=informational" alt="code size" />
-    <a href="https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/LICENSE">
-      <img src="https://img.shields.io/github/license/deepakpadhi986/AI-Resume-Analyzer.svg?color=yellow" alt="license" />
-    </a>
-  </p>
-  
-  <!--links-->
-  <h4>
-    <a href="#preview-">View Demo</a>
-    <span> · </span>
-    <a href="#setup--installation-">Installation</a>
-    <span> · </span>
-    <a href="mailto:dnoobnerd@gmail.com?subject=I%20Want%20The%20Project%20Report%20of%20AI-RESUME-ANALYZER%20(2022%20 %2023)&body=Here%20Are%20My%20Details%20%F0%9F%98%89%0D%0A%0D%0AOrganization%2FCollege%20Name%3A%20%0D%0A%0D%0AFull%20Name%3A%20%0D%0A%0D%0AGitHub%20Profile%20%3A%20%0D%0A%0D%0AFrom%20where%20did%20you%20get%20to%20know%20about%20this%20project%3A%0D%0A%0D%0APurpose%20of%20asking%20project%20report%20(describe)%3A%0D%0A%0D%0A%0D%0AIf%20the%20above%20information%20satisfy%20your%20identity%20you%20will%20get%20the%20report%20to%20your%20email.">Project Report</a>
-  </h4>
-  <p>
-    <small align="justify">
-      Built with 🤍 by 
-      <a href="https://dnoobnerd.netlify.app/">Deepak Padhi</a> through 
-      <a href="https://www.linkedin.com/in/mrbriit/">Dr Bright --(Data Scientist)</a>
-     </small>
-  </p>
-  <small align="justify">🚀 A Project Submitted for the partial fulfilment of the degree B.sc CS at 
-    <a href="https://kirticollege.edu.in/">Kirti College</a> during academic year 2022-23
-  </small>
-</div><br/><br/>
+AI Resume Analyzer is a portfolio-grade Streamlit application and HTTP API that compares a resume with a target job description. It combines deterministic parsing, ATS-style checks, optional semantic matching, evidence-backed requirement mapping, improvement guidance, and downloadable PDF reporting.
 
-## About the Project 🥱
-<div align="center">
-    <br/><img src="https://raw.githubusercontent.com/deepakpadhi986/AI-Resume-Analyzer/main/screenshots/RESUME.png" alt="screenshot" /><br/><br/>
-    <p align="justify"> 
-      A tool which parses information from a resume using natural language processing and finds the keywords, cluster them onto sectors based on their keywords. 
-      And lastly show recommendations, predictions, analytics to the applicant / recruiter based on keyword matching.
-    </p>
-</div>
+The application is designed as a decision-support tool. Its scores and suggestions help candidates review a resume; they do not reproduce a specific employer's ATS or guarantee an interview.
 
-## Scope 😲
-i. It can be used for getting all the resume data into a structured tabular format and csv as well, so that the organization can use those data for analytics purposes
+## Origin and my contribution
 
-ii. By providing recommendations, predictions and overall score user can improve their resume and can keep on testing it on our tool
+This repository is a substantial re-architecture of
+[Deepak Padhi's AI Resume Analyzer](https://github.com/deepakpadhi986/AI-Resume-Analyzer),
+used under the MIT License. The upstream project supplied the original Streamlit
+resume-analysis concept, course/video recommendation lists, parser foundation,
+and early candidate/admin workflow. I retained its copyright and license.
 
-iii. And it can increase more traffic to our tool because of user section
+My work focuses on turning that foundation into a testable, service-oriented
+application. I created or rebuilt:
 
-iv. It can be used by colleges to get insight of students and their resume before placements
+- a separate frontend and backend package structure;
+- a versioned JSON HTTP API with health, analysis, gap, interview-prep, bullet,
+  and PDF-report endpoints;
+- resume-to-job evidence mapping that links prioritized requirements to
+  supporting resume lines;
+- deterministic skill normalization, ATS checks, bullet-quality review, and
+  lexical fallbacks;
+- optional semantic matching with `sentence-transformers/all-MiniLM-L6-v2`;
+- SQLite and PostgreSQL persistence behind one storage interface;
+- environment-based admin authentication and deployment configuration;
+- downloadable PDF analysis reports;
+- unit, API, architecture, and frontend-navigation tests;
+- Docker, Railway-style, and continuous-integration configuration.
 
-v. Also, to get analytics for roles which users are mostly looking for
+See [CONTRIBUTIONS.md](CONTRIBUTIONS.md) for the upstream-to-current comparison
+and file-level ownership map.
 
-vi. To improve this tool by getting feedbacks
+## Screenshots
 
-<!-- TechStack -->
-## Tech Stack 🍻
-<details>
-  <summary>Frontend</summary>
-  <ul>
-    <li><a href="https://streamlit.io/">Streamlit</a></li>
-    <li><a href="https://developer.mozilla.org/en-US/docs/Learn/HTML">HTML</a></li>
-    <li><a href="https://developer.mozilla.org/en-US/docs/Web/CSS">CSS</a></li>
-    <li><a href="https://developer.mozilla.org/en-US/docs/Learn/JavaScript">JavaScript</a></li>
-  </ul>
-</details>
+![AI Resume Analyzer report overview](images/resume-report-overview.png)
 
-<details>
-  <summary>Backend</summary>
-  <ul>
-    <li><a href="https://streamlit.io/">Streamlit</a></li>
-    <li><a href="https://www.python.org/">Python</a></li>
-  </ul>
-</details>
+![Recommended courses and interview resources](images/recommendations-resources.png)
 
-<details>
-<summary>Database</summary>
-  <ul>
-    <li><a href="https://www.mysql.com/">MySQL</a></li>
-  </ul>
-</details>
+## Highlights
 
-<details>
-<summary>Modules</summary>
-  <ul>
-    <li><a href="https://pandas.pydata.org/">pandas</a></li>
-    <li><a href="https://github.com/OmkarPathak/pyresparser">pyresparser</a></li>
-    <li><a href="https://pypi.org/project/pdfminer3/">pdfminer3</a></li>
-    <li><a href="https://plotly.com/">Plotly</a></li>
-    <li><a href="https://www.nltk.org/">NLTK</a></li>
-  </ul>
-</details>
+- Parses PDF resumes and recovers contact details, education, sections, and skills.
+- Scores expected resume sections and groups results into readable ATS categories.
+- Compares resumes with job descriptions using embeddings when available and deterministic lexical fallbacks otherwise.
+- Maps prioritized JD capabilities to exact supporting resume lines and reports evidence coverage.
+- Categorizes missing signals across skills, tools, domain knowledge, and evidence.
+- Reviews bullet quality and suggests stronger, outcome-oriented phrasing.
+- Generates technical, project, and behavioral interview-practice questions from the JD.
+- Exports a PDF analysis report.
+- Stores local analytics in SQLite or connects to PostgreSQL for shared deployments.
+- Exposes the analysis workflow through a versioned JSON API.
 
-<!-- Features -->
-## Features 🤦‍♂️
-### Client: -
-- Fetching Location and Miscellaneous Data
+## How it works
 
-  Using Parsing Techniques to fetch
-- Basic Info
-- Skills
-- Keywords
-
-Using logical programs, it will recommend
-- Skills that can be added
-- Predicted job role
-- Course and certificates
-- Resume tips and ideas
-- Overall Score
-- Interview & Resume tip videos
-
-### Admin: -
-- Get all applicant’s data into tabular format
-- Download user’s data into csv file
-- View all saved uploaded pdf in Uploaded Resume folder
-- Get user feedback and ratings
-  
-  Pie Charts for: -
-- Ratings
-- Predicted field / roles
-- Experience level
-- Resume score
-- User count
-- City
-- State
-- Country
-
-### Feedback: -
-- Form filling
-- Rating from 1 – 5
-- Show overall ratings pie chart
-- Past user comments history 
-
-## Requirements 😅
-### Have these things installed to make your process smooth 
-1) Python (3.9.12) https://www.python.org/downloads/release/python-3912/
-2) MySQL https://www.mysql.com/downloads/
-3) Visual Studio Code **(Prefered Code Editor)** https://code.visualstudio.com/Download
-4) Visual Studio build tools for C++ https://aka.ms/vs/17/release/vs_BuildTools.exe
-
-## Setup & Installation 👀
-
-To run this project, perform the following tasks 😨
-
-Download the code file manually or via git
-```bash
-git clone https://github.com/deepakpadhi986/AI-Resume-Analyzer.git
+```mermaid
+flowchart LR
+    A[Resume PDF] --> B[Text extraction]
+    B --> C[Parsing and skill normalization]
+    D[Target job description] --> E[Semantic or lexical matching]
+    C --> E
+    C --> F[ATS and bullet checks]
+    E --> G[Evidence map and gap analysis]
+    F --> H[Streamlit report]
+    G --> H
+    H --> I[PDF export]
 ```
 
-Create a virtual environment and activate it **(recommended)**
+Semantic matching uses `sentence-transformers/all-MiniLM-L6-v2` when the optional dependency is installed. If the model cannot load, the application falls back to deterministic matching so the main workflow remains available.
 
-Open your command prompt and change your project directory to ```AI-Resume-Analyzer``` and run the following command 
-```bash
-python -m venv venvapp
+## Architecture
 
-cd venvapp/Scripts
-
-activate
-
+```text
+.
+├── app.py                         # Streamlit entry point
+├── backend/app/
+│   ├── api/server.py              # Versioned HTTP API
+│   ├── core/                      # Parsing, matching, scoring, and reports
+│   ├── models/                    # Domain and persistence models
+│   ├── schemas/                   # Request and response contracts
+│   └── services/                  # Analysis use cases
+├── frontend/
+│   ├── app.py                     # Frontend composition
+│   ├── api_client.py              # Backend client
+│   ├── components/                # Report and navigation UI
+│   ├── pages/                     # Candidate, admin, feedback, and about pages
+│   └── services/                  # PDF parsing and storage
+├── tests/                         # Unit, architecture, and API integration tests
+├── requirements/                  # Optional semantic and development extras
+├── Dockerfile
+├── nixpacks.toml
+└── pyproject.toml
 ```
 
-Downloading packages from ```requirements.txt``` inside ``App`` folder
+The frontend and backend are intentionally separate processes. The frontend calls the API through `BACKEND_API_URL`, which defaults to `http://127.0.0.1:8001`.
+
+### Request flow
+
+```mermaid
+sequenceDiagram
+    actor Candidate
+    participant UI as Streamlit frontend
+    participant API as Versioned HTTP API
+    participant Core as Analysis core
+    participant Match as Lexical/embedding matcher
+    participant DB as SQLite/PostgreSQL
+
+    Candidate->>UI: Upload resume and paste JD
+    UI->>API: POST /api/v1/analyses
+    API->>Core: Parse, score, and inspect bullets
+    Core->>Match: Compare resume evidence with JD
+    Match-->>Core: Matches, gaps, and similarity
+    Core-->>API: Structured analysis
+    API-->>UI: JSON response
+    UI->>DB: Store analysis metadata
+    UI-->>Candidate: Report, evidence, gaps, and PDF
+```
+
+### Module responsibilities
+
+| Area | Responsibility |
+|---|---|
+| `backend/app/core` | Parsing, normalization, scoring, matching, evidence mapping, interview prompts, and PDF generation |
+| `backend/app/api` | HTTP routing, input validation, error contracts, and response serialization |
+| `backend/app/services` | Application-level analysis use cases |
+| `frontend/pages` | Candidate, results, admin, feedback, home, and about views |
+| `frontend/components` | Navigation, report rendering, styles, courses, and admin analytics |
+| `frontend/services` | PDF extraction and SQLite/PostgreSQL persistence |
+| `tests` | Unit, API, architecture, package, and navigation checks |
+
+## Getting started
+
+### Prerequisites
+
+- Python 3.11 or newer
+- `pip` and `venv`
+
+### Installation
+
 ```bash
-cd../..
+git clone https://github.com/ramu-knightOps/Ai_Resume_Analyzer.git
+cd Ai_Resume_Analyzer
 
-cd App
-
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-python -m spacy download en_core_web_sm
-
+pip install -e .
 ```
 
-After installation is finished create a Database ```cv```
+Install the optional embedding model integration:
 
-And change user credentials inside ```App.py```
-https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/17e1cdb207fef62557dc394f4158bda515e541fd/App/App.py#L95
-
-Go to ```venvapp\Lib\site-packages\pyresparser``` folder
-
-And replace the ```resume_parser.py``` with ```resume_parser.py``` 
-
-which was provided by me inside ```pyresparser``` folder
-
-``Congratulations 🥳😱 your set-up 👆 and installation is finished 😵🤯``
-
-I hope that your ``venvapp`` is activated and working directory is inside ``App``
-
-Run the ```App.py``` file using
 ```bash
-streamlit run App.py
-
+pip install -r requirements/semantic.txt
 ```
 
-## Known Error 🤪
-If ``GeocoderUnavailable`` error comes up then just check your internet connection and network speed
+Install development and coverage tools:
 
-## Issue While Installation and Set-up 🤧
-Check-out installation [Video](https://youtu.be/WFruijLC1Nc)
+```bash
+pip install -r requirements/dev.txt
+```
 
-Feel Free to <a href="mailto:dnoobnerd@gmail.com?subject=I%20have%20an%20issue%20while%20setup%2Finstalling%20of%20AI%20RESUME%20ANALYZER&body=Name%3A%20-%0D%0A%0D%0ADesignation%3A%20-%0D%0A%0D%0APlease%20describe%20your%20problem%20in%20brief%20with%20attached%20photos%20of%20error">Send mail</a>
+## Configuration
 
-## Usage
-- After the setup it will do stuff's automatically
-- You just need to upload a resume and see it's magic
-- Try first with my resume uploaded in ``Uploaded_Resumes`` folder
-- Admin userid is ``admin`` and password is ``admin@resume-analyzer``
+Copy the example environment file:
 
-<!-- Roadmap -->
-## Roadmap 🛵
-* [x] Predict user experience level.
-* [x] Add resume scoring criteria for skills and projects.
-* [x] Added fields and recommendations for web, android, ios, data science.
-* [ ] Add more fields for other roles, and its recommendations respectively. 
-* [x] Fetch more details from users resume.
-* [ ] View individual user details.
+```bash
+cp .env.example .env
+```
 
-## Contributing 🤘
-Pull requests are welcome. 
+| Variable | Required | Purpose |
+|---|---:|---|
+| `BACKEND_API_URL` | No | API base URL used by the Streamlit frontend |
+| `SQLITE_DB_PATH` | No | Local SQLite path; defaults to `data/resume_analyzer.db` |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | No | PostgreSQL connection settings; provide the complete set |
+| `HF_TOKEN` | No | Higher-rate Hugging Face model downloads |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | No | Single admin login |
+| `ADMIN_CREDENTIALS` | No | Comma-separated `username:password` admin pairs |
 
-For major changes, please open an issue first to discuss what you would like to change.
+Never commit `.env`, `.streamlit/secrets.toml`, uploaded resumes, or local database files. They are excluded through `.gitignore`.
 
-I've attached the <a href="https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/RESUME%20ANALYSER%20SYNOPSIS.pdf">synopsis</a> of the project
+## Running locally
 
-If you want the full report of project
-<a href="mailto:dnoobnerd@gmail.com?subject=I%20Want%20The%20Project%20Report%20of%20AI-RESUME-ANALYZER%20(2022%20-%2023)&body=Here%20Are%20My%20Details%20%F0%9F%98%89%0D%0A%0D%0AOrganization%2FCollege%20Name%3A%20%0D%0A%0D%0AFull%20Name%3A%20%0D%0A%0D%0AGitHub%20Profile%20%3A%20%0D%0A%0D%0AFrom%20where%20did%20you%20get%20to%20know%20about%20this%20project%3A%0D%0A%0D%0APurpose%20of%20asking%20project%20report%20(describe)%3A%0D%0A%0D%0A%0D%0AIf%20the%20above%20information%20satisfy%20your%20identity%20you%20will%20get%20the%20report%20to%20your%20email.">Email Me</a> ``it's FREE``
+Start the API in the first terminal:
 
-## Acknowledgement 🤗
-- <a href="https://www.linkedin.com/in/mrbriit/">Dr Bright</a> - <a href="https://www.udemy.com/course/the-full-stack-data-scientist-bootcamp/">(The Full Stack Data Scientist BootCamp)</a>
-- <a href="https://www.academia.edu/32543544/Resume_Parser_with_Natural_Language_Processing">Resume Parser with Natural Language Processing</a>
-- <a href="https://github.com/OmkarPathak/pyresparser">pyresparser</a>
+```bash
+source .venv/bin/activate
+python -m backend.app.main
+```
 
-## Preview 👽
+Start Streamlit in a second terminal:
 
-### Client Side
+```bash
+source .venv/bin/activate
+streamlit run app.py
+```
 
-**Main Screen**
+Open `http://localhost:8501`. The API listens on `http://127.0.0.1:8001` by default.
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/user/1-main-screen.png?raw=true)
+The helper scripts launch each process independently:
 
-**Resume Analysis**
+```bash
+bash start-backend.sh   # API
+bash start.sh           # Streamlit frontend
+```
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/user/2-analysis.jpg?raw=true)
+## API
 
-**Skill Recommendation**
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/health` | Service health check |
+| `POST` | `/api/v1/analyses` | Complete resume and JD analysis |
+| `POST` | `/api/v1/analyses/bullet-quality` | Bullet-quality review |
+| `POST` | `/api/v1/analyses/jd-gap` | Categorized JD gap analysis |
+| `POST` | `/api/v1/analyses/interview-prep` | Interview-question generation |
+| `POST` | `/api/v1/reports/pdf` | PDF analysis report |
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/user/3-recom.png?raw=true)
+Example:
 
-**Course Recommendation**
+```bash
+curl -X POST http://127.0.0.1:8001/api/v1/analyses \
+  -H "Content-Type: application/json" \
+  -d '{
+    "candidate_name": "Asha",
+    "resume_text": "Skills: Python, SQL. Built a FastAPI service for analytics reporting.",
+    "resume_skills": ["Python", "SQL", "FastAPI"],
+    "job_description": "Seeking a data scientist with Python, SQL, model evaluation, and API deployment experience."
+  }'
+```
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/user/4-recom.png?raw=true)
+## Testing
 
-**Tips and Overall Score**
+Run the complete suite and enforce the project coverage threshold:
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/user/5-tipsscore.png?raw=true)
+```bash
+coverage run --source=backend.app -m unittest discover -s tests -v
+coverage report -m --fail-under=80
+```
 
-**Video Recommendation**
+Current verified result:
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/user/6-recom.png?raw=true)
+- 39 tests passing in a clean Python 3.12 environment.
+- 93% coverage of `backend.app`.
+- CI enforces at least 80% coverage of `backend.app`.
+- Coverage includes parsing, matching, ATS scoring, evidence mapping, API behavior, PDF fallback, and package architecture.
 
-### Feedback
+Test counts and coverage should be taken from the latest GitHub Actions run
+rather than manually maintained badges.
 
-**Feedback Form**
+## Deployment
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/feedback/1-form.png?raw=true)
+The repository includes `Dockerfile` and `nixpacks.toml` definitions suitable for container or Railway-style deployments.
 
-**Overall Rating Analysis and Comment History**
+Because the frontend and API are separate processes, production deployment should run them as two services:
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/feedback/2-analytics.png?raw=true)
+1. Backend service: `bash start-backend.sh`
+2. Frontend service: `bash start.sh`
+3. Frontend environment: set `BACKEND_API_URL` to the public backend URL
 
-### Admin
+Use PostgreSQL instead of local SQLite when multiple instances or persistent shared analytics are required.
 
-**Login**
+## Privacy and responsible use
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/admin/1-main-screen.png?raw=true)
+Resumes contain personal information. For non-local deployments:
 
-**User Count and it's data**
+- Use TLS and access controls.
+- Keep secrets in the deployment platform's secret manager.
+- Define retention and deletion rules for uploaded resumes and analysis records.
+- Avoid logging raw resume text or credentials.
+- Treat all match scores as guidance, not hiring decisions.
+- Review generated suggestions before using them in an application.
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/admin/2-user-data.png?raw=true)
+## Limitations
 
-**Exported csv file**
+- PDF extraction quality depends on the source document's structure and embedded fonts.
+- Keyword and embedding similarity do not prove proficiency or job readiness.
+- The tool does not emulate proprietary ATS ranking algorithms.
+- Suggested bullet rewrites require human verification; users should never add unsupported metrics.
+- Semantic results depend on the quality and specificity of both the resume and JD.
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/admin/3-user-datacsv.png?raw=true)
+## Contributing
 
-**Feedback Data**
+Issues and focused pull requests are welcome. Before submitting a change:
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/admin/4-feed-data.png?raw=true)
+1. Keep analysis logic deterministic where practical.
+2. Add or update tests for behavior changes.
+3. Run the full test and coverage commands.
+4. Do not commit resumes, credentials, databases, model caches, or generated reports.
 
-**Pie Chart Analytical Representation of clusters**
+## License
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/admin/5-pieexp.png?raw=true)
+This project is available under the [MIT License](LICENSE). The license permits use, copying, modification, distribution, sublicensing, and sale, provided the copyright and permission notice are retained.
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/admin/6-piescre.jpg?raw=true)
+The repository retains the required upstream copyright notice:
 
-![Screenshot](https://github.com/deepakpadhi986/AI-Resume-Analyzer/blob/main/screenshots/admin/7-pielocation.png?raw=true)
+> Copyright (c) 2022 Deepak Padhi
 
-### Built with 🤍 AI RESUME ANALYZER by <a href="https://dnoobnerd.netlify.app/">Deepak Padhi</a>
+New re-architecture work is documented in [NOTICE](NOTICE) and
+[CONTRIBUTIONS.md](CONTRIBUTIONS.md). See [LICENSE](LICENSE) for the complete
+terms and warranty disclaimer.
