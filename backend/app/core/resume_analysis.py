@@ -16,6 +16,7 @@ from .matching import (
     infer_role_from_skills,
     normalize_text,
 )
+from .parser import merge_resume_data
 
 SECTION_CATEGORY_MAP = {
     "Objective or Summary": "Positioning",
@@ -512,15 +513,20 @@ def build_pdf_report_bytes(report_title: str, analysis: dict[str, Any]) -> bytes
     return _build_pdf_report_bytes_fallback(report_title, analysis)
 
 
-def build_api_payload(resume_text: str, resume_skills: list[str], job_description: str, candidate_name: str = "Candidate") -> dict[str, Any]:
-    resume_data = {
-        "name": candidate_name,
+def build_api_payload(
+    resume_text: str,
+    resume_skills: list[str],
+    job_description: str,
+    candidate_name: str = "",
+    page_count: int | None = None,
+) -> dict[str, Any]:
+    parser_data = {
         "skills": resume_skills,
-        "no_of_pages": max(1, resume_text.count("\f") + 1) if resume_text else 1,
-        "degree": [],
-        "email": "",
-        "mobile_number": "",
+        "no_of_pages": page_count,
     }
+    if candidate_name.strip():
+        parser_data["name"] = candidate_name.strip()
+    resume_data = merge_resume_data(resume_text, parser_data)
     return build_full_analysis(resume_data, resume_text, job_description)
 
 

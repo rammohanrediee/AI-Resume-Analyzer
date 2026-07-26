@@ -1,13 +1,11 @@
-"""Local frontend persistence for uploaded analysis sessions and feedback."""
+"""Privacy-minimized persistence for anonymous product analytics."""
 
 from __future__ import annotations
 
 import datetime
-import getpass
+import hashlib
 import os
-import platform
 import secrets
-import socket
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,8 +17,11 @@ from dotenv import load_dotenv
 
 PACKAGE_DIR = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = PACKAGE_DIR.parent
-
 load_dotenv(PROJECT_ROOT / ".env")
+
+
+def _timestamp() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
 def _env_is_configured(*names: str) -> bool:
@@ -31,26 +32,32 @@ def _placeholder_sql(sql: str, dialect: str) -> str:
     return sql.replace("%s", "?") if dialect == "sqlite" else sql
 
 
-def _timestamp() -> str:
-    return datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+def hash_admin_password(password: str, salt: bytes | None = None) -> str:
+    salt = salt or secrets.token_bytes(16)
+    digest = hashlib.scrypt(
+        password.encode("utf-8"),
+        salt=salt,
+        n=2**14,
+        r=8,
+        p=1,
+        dklen=32,
+    )
+    return f"{salt.hex()}${digest.hex()}"
+
+
+def verify_admin_password(password: str, encoded_hash: str) -> bool:
+    try:
+        salt_hex, expected_hex = encoded_hash.split("$", 1)
+        actual = hash_admin_password(password, bytes.fromhex(salt_hex)).split("$", 1)[1]
+        return secrets.compare_digest(actual, expected_hex)
+    except (ValueError, TypeError):
+        return False
 
 
 def parse_admin_credentials() -> dict[str, str]:
-    raw_credentials = os.getenv("ADMIN_CREDENTIALS", "").strip()
-    if raw_credentials:
-        credentials = {}
-        for pair in raw_credentials.split(","):
-            if ":" not in pair:
-                continue
-            username, password = pair.split(":", 1)
-            if username.strip() and password.strip():
-                credentials[username.strip()] = password.strip()
-        if credentials:
-            return credentials
-
     username = os.getenv("ADMIN_USERNAME", "").strip()
-    password = os.getenv("ADMIN_PASSWORD", "").strip()
-    return {username: password} if username and password else {}
+    password_hash = os.getenv("ADMIN_PASSWORD_HASH", "").strip()
+    return {username: password_hash} if username and password_hash else {}
 
 
 @dataclass
@@ -58,6 +65,7 @@ class FrontendDatabase:
     connection: object
     dialect: str
     status_message: str | None = None
+    analytics_enabled: bool = True
 
     def execute(self, sql: str, params=()):
         cursor = self.connection.cursor()
@@ -83,216 +91,138 @@ class FrontendDatabase:
         finally:
             cursor.close()
 
-    def text_cast(self, column_name: str) -> str:
-        return f"{column_name}::TEXT" if self.dialect == "postgres" else column_name
-
     def initialize(self):
-        if self.dialect == "postgres":
-            user_table_sql = """
-                CREATE TABLE IF NOT EXISTS user_data (
-                    ID SERIAL PRIMARY KEY,
-                    sec_token VARCHAR(20) NOT NULL,
-                    ip_add VARCHAR(50) NULL,
-                    host_name VARCHAR(50) NULL,
-                    dev_user VARCHAR(50) NULL,
-                    os_name_ver VARCHAR(50) NULL,
-                    latlong VARCHAR(50) NULL,
-                    city VARCHAR(50) NULL,
-                    state VARCHAR(50) NULL,
-                    country VARCHAR(50) NULL,
-                    act_name VARCHAR(50) NOT NULL,
-                    act_mail VARCHAR(50) NOT NULL,
-                    act_mob VARCHAR(20) NOT NULL,
-                    Name VARCHAR(500) NOT NULL,
-                    Email_ID VARCHAR(500) NOT NULL,
-                    resume_score VARCHAR(8) NOT NULL,
-                    Timestamp VARCHAR(50) NOT NULL,
-                    Page_no VARCHAR(5) NOT NULL,
-                    Predicted_Field TEXT NOT NULL,
-                    User_level TEXT NOT NULL,
-                    Actual_skills TEXT NOT NULL,
-                    Recommended_skills TEXT NOT NULL,
-                    Recommended_courses TEXT NOT NULL,
-                    pdf_name VARCHAR(50) NOT NULL,
-                    pdf_content BYTEA
-                );
-            """
-            feedback_table_sql = """
-                CREATE TABLE IF NOT EXISTS user_feedback (
-                    ID SERIAL PRIMARY KEY,
-                    feed_name VARCHAR(50) NOT NULL,
-                    feed_email VARCHAR(50) NOT NULL,
-                    feed_score VARCHAR(5) NOT NULL,
-                    comments VARCHAR(100) NULL,
-                    Timestamp VARCHAR(50) NOT NULL
-                );
-            """
-        else:
-            user_table_sql = """
-                CREATE TABLE IF NOT EXISTS user_data (
-                    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                    sec_token TEXT NOT NULL,
-                    ip_add TEXT,
-                    host_name TEXT,
-                    dev_user TEXT,
-                    os_name_ver TEXT,
-                    latlong TEXT,
-                    city TEXT,
-                    state TEXT,
-                    country TEXT,
-                    act_name TEXT NOT NULL,
-                    act_mail TEXT NOT NULL,
-                    act_mob TEXT NOT NULL,
-                    Name TEXT NOT NULL,
-                    Email_ID TEXT NOT NULL,
-                    resume_score TEXT NOT NULL,
-                    Timestamp TEXT NOT NULL,
-                    Page_no TEXT NOT NULL,
-                    Predicted_Field TEXT NOT NULL,
-                    User_level TEXT NOT NULL,
-                    Actual_skills TEXT NOT NULL,
-                    Recommended_skills TEXT NOT NULL,
-                    Recommended_courses TEXT NOT NULL,
-                    pdf_name TEXT NOT NULL,
-                    pdf_content BLOB
-                );
-            """
-            feedback_table_sql = """
-                CREATE TABLE IF NOT EXISTS user_feedback (
-                    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                    feed_name TEXT NOT NULL,
-                    feed_email TEXT NOT NULL,
-                    feed_score TEXT NOT NULL,
-                    comments TEXT,
-                    Timestamp TEXT NOT NULL
-                );
-            """
-
+        id_type = "SERIAL PRIMARY KEY" if self.dialect == "postgres" else "INTEGER PRIMARY KEY AUTOINCREMENT"
         cursor = self.connection.cursor()
         try:
-            cursor.execute(user_table_sql)
-            cursor.execute(feedback_table_sql)
-            if self.dialect == "postgres":
-                cursor.execute("ALTER TABLE user_data ADD COLUMN IF NOT EXISTS pdf_content BYTEA")
-            else:
-                cursor.execute("PRAGMA table_info(user_data)")
-                sqlite_columns = {column[1] for column in cursor.fetchall()}
-                if "pdf_content" not in sqlite_columns:
-                    cursor.execute("ALTER TABLE user_data ADD COLUMN pdf_content BLOB")
+            cursor.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS analysis_events (
+                    id {id_type},
+                    event_token TEXT NOT NULL,
+                    resume_score INTEGER NOT NULL,
+                    timestamp TEXT NOT NULL,
+                    page_count INTEGER NOT NULL,
+                    career_track TEXT NOT NULL,
+                    candidate_level TEXT NOT NULL,
+                    detected_skills TEXT NOT NULL,
+                    recommended_skills TEXT NOT NULL,
+                    recommended_courses TEXT NOT NULL
+                )
+                """
+            )
+            cursor.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS feedback (
+                    id {id_type},
+                    score INTEGER NOT NULL,
+                    comments TEXT NOT NULL,
+                    timestamp TEXT NOT NULL
+                )
+                """
+            )
             self.connection.commit()
         finally:
             cursor.close()
 
-    def save_analysis(self, record: dict):
-        insert_sql = """
-            INSERT INTO user_data
-            (sec_token, ip_add, host_name, dev_user, os_name_ver, latlong, city, state, country,
-             act_name, act_mail, act_mob, name, email_id, resume_score, timestamp, page_no,
-             predicted_field, user_level, actual_skills, recommended_skills, recommended_courses,
-             pdf_name, pdf_content)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        """
+    def save_analysis(self, event: dict) -> bool:
+        if not self.analytics_enabled:
+            return False
         cursor = self.execute(
-            insert_sql,
+            """
+            INSERT INTO analysis_events
+            (event_token, resume_score, timestamp, page_count, career_track,
+             candidate_level, detected_skills, recommended_skills, recommended_courses)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """,
             (
-                record["sec_token"],
-                record["ip_add"],
-                record["host_name"],
-                record["dev_user"],
-                record["os_name_ver"],
-                record["latlong"],
-                record["city"],
-                record["state"],
-                record["country"],
-                record["act_name"],
-                record["act_mail"],
-                record["act_mob"],
-                record["name"],
-                record["email"],
-                str(record["resume_score"]),
-                record["timestamp"],
-                str(record["page_no"]),
-                record["predicted_field"],
-                record["user_level"],
-                str(record["actual_skills"]),
-                str(record["recommended_skills"]),
-                str(record["recommended_courses"]),
-                record["pdf_name"],
-                record["pdf_content"],
+                event["event_token"],
+                event["resume_score"],
+                event["timestamp"],
+                event["page_count"],
+                event["career_track"],
+                event["candidate_level"],
+                event["detected_skills"],
+                event["recommended_skills"],
+                event["recommended_courses"],
             ),
         )
         cursor.close()
         self.connection.commit()
+        return True
 
-    def save_feedback(self, *, name: str, email: str, score: int, comments: str):
+    def save_feedback(self, *, score: int, comments: str):
         cursor = self.execute(
-            """
-            INSERT INTO user_feedback (feed_name, feed_email, feed_score, comments, timestamp)
-            VALUES (%s,%s,%s,%s,%s)
-            """,
-            (name, email, str(score), comments, _timestamp()),
+            "INSERT INTO feedback (score, comments, timestamp) VALUES (%s,%s,%s)",
+            (score, comments.strip(), _timestamp()),
         )
         cursor.close()
         self.connection.commit()
 
     def load_feedback(self) -> pd.DataFrame:
-        return self.read_dataframe("SELECT * FROM user_feedback")
-
-    def load_comments(self) -> pd.DataFrame:
-        rows = self.fetch_all("SELECT feed_name, comments FROM user_feedback")
-        return pd.DataFrame(rows, columns=["User", "Comment"])
+        rows = self.fetch_all("SELECT id, score, comments, timestamp FROM feedback")
+        return pd.DataFrame(rows, columns=["ID", "Feedback Score", "Comments", "Timestamp"])
 
     def load_admin_frames(self):
-        plot_rows = self.fetch_all(
-            f"""
-            SELECT ID, ip_add, resume_score, {self.text_cast("Predicted_Field")},
-                   {self.text_cast("User_level")}, city, state, country
-            FROM user_data
+        rows = self.fetch_all(
+            """
+            SELECT id, resume_score, career_track, candidate_level, timestamp,
+                   page_count, detected_skills, recommended_skills, recommended_courses
+            FROM analysis_events
             """
         )
-        plot_data = pd.DataFrame(
-            plot_rows,
-            columns=["Idt", "IP_add", "resume_score", "Predicted_Field", "User_Level", "City", "State", "Country"],
-        )
-
-        user_rows = self.fetch_all(
-            f"""
-            SELECT ID, sec_token, ip_add, act_name, act_mail, act_mob, {self.text_cast("Predicted_Field")},
-                   Timestamp, Name, Email_ID, resume_score, Page_no, pdf_name, {self.text_cast("User_level")},
-                   {self.text_cast("Actual_skills")}, {self.text_cast("Recommended_skills")},
-                   {self.text_cast("Recommended_courses")}, city, state, country, latlong, os_name_ver, host_name, dev_user
-            FROM user_data
-            """
-        )
-        users_df = pd.DataFrame(
-            user_rows,
+        events = pd.DataFrame(
+            rows,
             columns=[
-                "ID", "Token", "IP Address", "Name", "Mail", "Mobile Number", "Predicted Field", "Timestamp",
-                "Predicted Name", "Predicted Mail", "Resume Score", "Total Page", "File Name", "User Level",
-                "Actual Skills", "Recommended Skills", "Recommended Course", "City", "State", "Country",
-                "Lat Long", "Server OS", "Server Name", "Server User",
+                "ID",
+                "Resume Score",
+                "Career Track",
+                "Candidate Level",
+                "Timestamp",
+                "Page Count",
+                "Detected Skills",
+                "Recommended Skills",
+                "Recommended Courses",
             ],
         )
-
-        feedback_rows = self.fetch_all("SELECT * FROM user_feedback")
-        feedback_df = pd.DataFrame(
-            feedback_rows,
-            columns=["ID", "Name", "Email", "Feedback Score", "Comments", "Timestamp"],
+        plot_data = events.rename(
+            columns={
+                "Resume Score": "resume_score",
+                "Career Track": "Predicted_Field",
+                "Candidate Level": "User_Level",
+            }
         )
-        return plot_data, users_df, feedback_df
+        return plot_data, events, self.load_feedback()
+
+    def clear_analytics(self):
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute("DELETE FROM analysis_events")
+            cursor.execute("DELETE FROM feedback")
+            cursor.execute("DROP TABLE IF EXISTS user_data")
+            cursor.execute("DROP TABLE IF EXISTS user_feedback")
+            self.connection.commit()
+        finally:
+            cursor.close()
 
 
-def _connect_sqlite():
+def _connect_sqlite(analytics_enabled: bool):
     db_path = os.getenv("SQLITE_DB_PATH") or str(PROJECT_ROOT / "data" / "resume_analyzer.db")
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(db_path, check_same_thread=False)
-    return FrontendDatabase(connection, "sqlite", f"SQLite prototype storage is active at `{db_path}`.")
+    message = (
+        "Anonymous analytics are enabled."
+        if analytics_enabled
+        else "Analytics storage is disabled by default; resume content is not retained."
+    )
+    return FrontendDatabase(connection, "sqlite", message, analytics_enabled)
 
 
 @st.cache_resource
 def get_database() -> FrontendDatabase:
+    analytics_enabled = os.getenv("ANALYTICS_ENABLED", "false").lower() == "true"
     postgres_env = ("DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD")
-    if _env_is_configured(*postgres_env):
+    if analytics_enabled and _env_is_configured(*postgres_env):
         try:
             database = FrontendDatabase(
                 psycopg2.connect(
@@ -303,59 +233,29 @@ def get_database() -> FrontendDatabase:
                     password=os.getenv("DB_PASSWORD"),
                 ),
                 "postgres",
+                "Anonymous analytics are enabled with PostgreSQL.",
+                True,
             )
-        except Exception as error:
-            database = _connect_sqlite()
-            database.status_message = (
-                "PostgreSQL connection failed, so the app switched to local SQLite storage for prototype mode. "
-                f"Details: {error}"
-            )
+        except Exception:
+            database = _connect_sqlite(analytics_enabled)
+            database.status_message = "PostgreSQL was unavailable; anonymous analytics use local SQLite."
     else:
-        database = _connect_sqlite()
-
+        database = _connect_sqlite(analytics_enabled)
     database.initialize()
     return database
 
 
-def build_session_record(
-    *,
-    contact: dict,
-    analysis: dict,
-    recommended_courses: list[str],
-    pdf_name: str,
-    pdf_content: bytes,
-) -> dict:
-    host_name = socket.gethostname()
-    try:
-        ip_add = socket.gethostbyname(host_name)
-    except Exception:
-        ip_add = "Unavailable"
-
+def build_analysis_event(*, analysis: dict, recommended_courses: list[str]) -> dict:
     candidate = analysis["candidate"]
     summary = analysis["summary"]
     return {
-        "sec_token": secrets.token_urlsafe(12),
-        "ip_add": ip_add,
-        "host_name": host_name,
-        "dev_user": getpass.getuser(),
-        "os_name_ver": f"{platform.system()} {platform.release()}",
-        "latlong": "",
-        "city": "",
-        "state": "",
-        "country": "",
-        "act_name": contact["name"],
-        "act_mail": contact["email"],
-        "act_mob": contact["mobile"],
-        "name": candidate.get("name") or contact["name"],
-        "email": candidate.get("email") or contact["email"],
-        "resume_score": summary["resume_score"],
+        "event_token": secrets.token_urlsafe(12),
+        "resume_score": int(summary["resume_score"]),
         "timestamp": _timestamp(),
-        "page_no": candidate.get("page_count", 0),
-        "predicted_field": summary["career_track"],
-        "user_level": candidate["candidate_level"],
-        "actual_skills": candidate["skills"],
-        "recommended_skills": summary["recommended_skills"],
-        "recommended_courses": recommended_courses,
-        "pdf_name": pdf_name,
-        "pdf_content": pdf_content,
+        "page_count": int(candidate.get("page_count", 0)),
+        "career_track": str(summary["career_track"]),
+        "candidate_level": str(candidate["candidate_level"]),
+        "detected_skills": ", ".join(candidate.get("skills", [])),
+        "recommended_skills": ", ".join(summary.get("recommended_skills", [])),
+        "recommended_courses": ", ".join(recommended_courses),
     }

@@ -4,8 +4,10 @@ import time
 import unittest
 import urllib.error
 import urllib.request
+from unittest.mock import patch
 
 from backend.app.main import create_server
+from backend.app.api.server import MAX_REQUEST_BYTES, RequestRateLimiter, resolve_server_config
 
 
 SAMPLE_RESUME = """
@@ -35,11 +37,13 @@ class ResumeAnalysisAPITestCase(unittest.TestCase):
         cls.server.server_close()
         cls.thread.join(timeout=2)
 
-    def post_json(self, path, payload):
+    def post_json(self, path, payload, headers=None):
+        request_headers = {"Content-Type": "application/json"}
+        request_headers.update(headers or {})
         request = urllib.request.Request(
             f"http://127.0.0.1:{self.port}{path}",
             data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
+            headers=request_headers,
             method="POST",
         )
         return urllib.request.urlopen(request)
@@ -75,6 +79,28 @@ class ResumeAnalysisAPITestCase(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(payload["error"]["code"], "invalid_json")
 
+    def test_json_body_must_be_an_object(self):
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}/api/v1/analyses",
+            data=b"[]",
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        status, payload = self.read_http_error(request)
+        self.assertEqual(status, 400)
+        self.assertEqual(payload["error"]["code"], "invalid_request")
+
+    def test_page_count_must_be_a_positive_reasonable_integer(self):
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}/api/v1/analyses",
+            data=json.dumps({"resume_text": SAMPLE_RESUME, "page_count": 0}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        status, payload = self.read_http_error(request)
+        self.assertEqual(status, 422)
+        self.assertEqual(payload["error"]["code"], "validation_error")
+
     def test_analysis_endpoint(self):
         response = self.post_json(
             "/api/v1/analyses",
@@ -92,6 +118,68 @@ class ResumeAnalysisAPITestCase(unittest.TestCase):
         self.assertIn("bullet_quality", payload["data"])
         self.assertIn("requirement_evidence", payload["data"])
         self.assertGreater(payload["data"]["requirement_evidence"]["total_count"], 0)
+
+    def test_analysis_endpoint_returns_parsed_resume_metadata(self):
+        response = self.post_json(
+            "/api/v1/analyses",
+            {
+                "candidate_name": "",
+                "resume_text": (
+                    "Ramu Reddy\nramu@example.com\n+91 98765 43210\n"
+                    "EDUCATION\nB.Tech\nSKILLS\nPython, FastAPI, SQL"
+                ),
+                "page_count": 2,
+                "job_description": "Python API engineer",
+            },
+        )
+        candidate = json.loads(response.read().decode("utf-8"))["data"]["candidate"]
+        self.assertEqual(candidate["name"], "Ramu Reddy")
+        self.assertEqual(candidate["email"], "ramu@example.com")
+        self.assertEqual(candidate["page_count"], 2)
+
+    def test_rejects_request_larger_than_configured_limit(self):
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}/api/v1/analyses",
+            data=b"{}",
+            headers={
+                "Content-Type": "application/json",
+                "Content-Length": str(MAX_REQUEST_BYTES + 1),
+            },
+            method="POST",
+        )
+        status, payload = self.read_http_error(request)
+        self.assertEqual(status, 413)
+        self.assertEqual(payload["error"]["code"], "payload_too_large")
+
+    @patch.dict("os.environ", {"RESUME_API_KEY": "test-secret"}, clear=False)
+    def test_requires_bearer_token_when_api_key_is_configured(self):
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}/api/v1/analyses",
+            data=json.dumps({"resume_text": SAMPLE_RESUME}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        status, payload = self.read_http_error(request)
+        self.assertEqual(status, 401)
+        self.assertEqual(payload["error"]["code"], "unauthorized")
+
+        response = self.post_json(
+            "/api/v1/analyses",
+            {"resume_text": SAMPLE_RESUME},
+            headers={"Authorization": "Bearer test-secret"},
+        )
+        self.assertEqual(response.status, 200)
+
+    @patch.dict("os.environ", {"API_HOST": "0.0.0.0", "PORT": "9123"}, clear=False)
+    def test_server_configuration_uses_deployment_environment(self):
+        self.assertEqual(resolve_server_config(), ("0.0.0.0", 9123))
+
+    def test_rate_limiter_rejects_requests_after_the_window_limit(self):
+        limiter = RequestRateLimiter(limit=2, window_seconds=60)
+        self.assertTrue(limiter.allow("127.0.0.1", now=100.0))
+        self.assertTrue(limiter.allow("127.0.0.1", now=101.0))
+        self.assertFalse(limiter.allow("127.0.0.1", now=102.0))
+        self.assertTrue(limiter.allow("127.0.0.1", now=161.0))
 
     def test_bullet_quality_endpoint(self):
         response = self.post_json("/api/v1/analyses/bullet-quality", {"resume_text": SAMPLE_RESUME})

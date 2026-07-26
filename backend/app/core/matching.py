@@ -1,4 +1,3 @@
-import math
 import os
 import re
 from collections import Counter
@@ -230,7 +229,6 @@ def infer_role_from_skills(skills,resume_text=""):
     }
     resume_text_lower = normalize_text(resume_text).lower()
     best_role=None
-    best_overlap=0.0
     best_score=0
     best_matching=[]
     best_missing = []
@@ -285,7 +283,7 @@ def infer_role_from_skills(skills,resume_text=""):
     }
 
 def cosine_similarity(vec_a,vec_b):
-    dot=sum( a*b for a,b in zip(vec_a,vec_b))
+    dot=sum(a * b for a, b in zip(vec_a, vec_b, strict=True))
     magnitude_a=sum(value*value for value in vec_a)**0.5
     magnitude_b=sum(value*value for value in vec_b)**0.5
     if magnitude_a==0 or magnitude_b==0:
@@ -295,7 +293,7 @@ def cosine_similarity(vec_a,vec_b):
 def _rank_vectors(query_vector, candidates, metadata, top_k):
     scored = [
         (cosine_similarity(query_vector, vector), item)
-        for item, vector in zip(metadata, candidates)
+        for item, vector in zip(metadata, candidates, strict=True)
     ]
     scored.sort(key=lambda item: item[0], reverse=True)
     return scored[:top_k]
@@ -355,7 +353,7 @@ def compute_semantic_matches(job_description, resume_text, resume_skills, top_k=
             [normalized_job, normalized_resume], convert_to_numpy=True
         )
         role_matches = []
-        for role, role_vector in zip(ROLE_CATALOG, indexes["role_vectors"]):
+        for role, role_vector in zip(ROLE_CATALOG, indexes["role_vectors"], strict=True):
             job_score = cosine_similarity(job_vector, role_vector)
             resume_score = cosine_similarity(resume_vector, role_vector)
             role_skills = {canonicalize_skill(keyword).lower() for keyword in role["keywords"]}

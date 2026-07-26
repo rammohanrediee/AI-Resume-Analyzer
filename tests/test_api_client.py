@@ -21,6 +21,25 @@ class ResumeAnalyzerClientTestCase(unittest.TestCase):
     def test_healthcheck_reports_unavailable_api(self, _mocked_urlopen):
         self.assertFalse(ResumeAnalyzerClient("http://example.test").is_available())
 
+    @patch("frontend.api_client.urlopen")
+    def test_client_sends_api_key_and_page_count(self, mocked_urlopen):
+        response = MagicMock()
+        response.read.return_value = json.dumps({"data": {"candidate": {}}}).encode("utf-8")
+        mocked_urlopen.return_value.__enter__.return_value = response
+
+        client = ResumeAnalyzerClient("http://example.test", api_key="secret")
+        client.analyze(
+            candidate_name="Ramu",
+            resume_text="Python",
+            resume_skills=[],
+            job_description="Python engineer",
+            page_count=2,
+        )
+
+        request = mocked_urlopen.call_args.args[0]
+        self.assertEqual(request.get_header("Authorization"), "Bearer secret")
+        self.assertEqual(json.loads(request.data)["page_count"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

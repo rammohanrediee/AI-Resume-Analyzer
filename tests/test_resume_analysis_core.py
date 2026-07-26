@@ -8,6 +8,29 @@ from backend.app.core.resume_analysis import (
 
 
 class ResumeAnalysisCoreTests(unittest.TestCase):
+    def test_api_payload_parses_contact_degree_skills_and_real_page_count(self):
+        analysis = build_api_payload(
+            resume_text=(
+                "Ramu Reddy\nramu@example.com\n+91 98765 43210\n"
+                "EDUCATION\nB.Tech in Artificial Intelligence\n"
+                "SKILLS\nPython, FastAPI, SQL\n"
+                "PROJECTS\nBuilt a resume analysis API with automated tests."
+            ),
+            resume_skills=[],
+            job_description="Python FastAPI engineer",
+            candidate_name="",
+            page_count=2,
+        )
+
+        candidate = analysis["candidate"]
+        self.assertEqual(candidate["name"], "Ramu Reddy")
+        self.assertEqual(candidate["email"], "ramu@example.com")
+        self.assertIn("98765", candidate["mobile_number"])
+        self.assertIn("B.Tech", candidate["degree"])
+        self.assertEqual(candidate["page_count"], 2)
+        self.assertIn("Python", candidate["skills"])
+        self.assertIn("Python", candidate["highlights"])
+
     def test_full_analysis_without_job_description_uses_guidance_defaults(self):
         analysis = build_api_payload(
             resume_text="Summary\nSkills\nPython\nProjects\n- Built an API for 500 users",

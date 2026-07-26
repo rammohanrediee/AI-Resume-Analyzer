@@ -9,7 +9,7 @@ from ..components.styles import section_card
 
 def build_rating_chart(feedback_df, theme_mode):
     chart_theme = get_chart_theme_settings(theme_mode)
-    ratings = feedback_df.feed_score.value_counts().sort_index()
+    ratings = feedback_df["Feedback Score"].value_counts().sort_index()
     labels = [f"{rating} star" for rating in ratings.index]
     figure = go.Figure(
         go.Pie(
@@ -46,15 +46,13 @@ def build_rating_chart(feedback_df, theme_mode):
 def render_feedback_page(database, theme_mode: str):
     st.markdown(section_card("Feedback", "Share what worked, what felt unclear, and what you want next."), unsafe_allow_html=True)
     with st.form("feedback_form"):
-        name = st.text_input("Name")
-        email = st.text_input("Email")
         score = st.slider("Rate Us From 1 - 5", 1, 5)
         comments = st.text_input("Comments")
         submitted = st.form_submit_button("Submit")
         if submitted:
             try:
-                database.save_feedback(name=name, email=email, score=score, comments=comments)
-                st.success("Thanks. Your feedback was recorded.")
+                database.save_feedback(score=score, comments=comments)
+                st.success("Thanks. Your anonymous feedback was recorded.")
             except Exception as error:
                 st.warning(f"Feedback was received, but storing it failed. Details: {error}")
 
@@ -64,6 +62,3 @@ def render_feedback_page(database, theme_mode: str):
         st.info("No feedback has been recorded yet.")
     else:
         st.plotly_chart(build_rating_chart(feedback_df, theme_mode), width="stretch")
-
-    st.subheader("User Comments")
-    st.dataframe(database.load_comments(), width=1000)
