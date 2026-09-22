@@ -22,7 +22,7 @@ class ResumeAnalyzerClientTestCase(unittest.TestCase):
         self.assertFalse(ResumeAnalyzerClient("http://example.test").is_available())
 
     @patch("frontend.api_client.urlopen")
-    def test_client_sends_api_key_and_page_count(self, mocked_urlopen):
+    def test_client_sends_api_key_page_count_and_pdf_upload(self, mocked_urlopen):
         response = MagicMock()
         response.read.return_value = json.dumps({"data": {"candidate": {}}}).encode("utf-8")
         mocked_urlopen.return_value.__enter__.return_value = response
@@ -39,6 +39,15 @@ class ResumeAnalyzerClientTestCase(unittest.TestCase):
         request = mocked_urlopen.call_args.args[0]
         self.assertEqual(request.get_header("Authorization"), "Bearer secret")
         self.assertEqual(json.loads(request.data)["page_count"], 2)
+
+        response.read.return_value = json.dumps({"data": {"text": "Python", "page_count": 1}}).encode("utf-8")
+        extraction = client.extract_document(filename='resume".pdf', pdf_bytes=b"%PDF-data")
+        request = mocked_urlopen.call_args.args[0]
+        self.assertEqual(extraction["page_count"], 1)
+        self.assertEqual(request.get_header("Authorization"), "Bearer secret")
+        self.assertIn("multipart/form-data", request.get_header("Content-type"))
+        self.assertIn(b'filename="resume.pdf"', request.data)
+        self.assertIn(b"%PDF-data", request.data)
 
 
 if __name__ == "__main__":

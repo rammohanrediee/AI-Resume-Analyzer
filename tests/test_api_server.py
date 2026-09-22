@@ -1,7 +1,9 @@
 import unittest
+from io import BytesIO
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from reportlab.pdfgen import canvas
 
 from backend.app.api.server import MAX_REQUEST_BYTES, RequestRateLimiter, create_app, resolve_server_config
 
@@ -186,6 +188,30 @@ class ResumeAnalysisAPITestCase(unittest.TestCase):
         self.assertIn("attachment", response.headers["content-disposition"])
         self.assertTrue(response.content.startswith(b"%PDF-"))
 
+    def test_document_upload_extracts_text_and_rejects_non_pdf_content(self):
+        pdf_buffer = BytesIO()
+        document = canvas.Canvas(pdf_buffer)
+        document.drawString(72, 760, "Ramu Reddy Python FastAPI SQL backend engineer")
+        document.drawString(72, 730, "Built and tested reliable resume analysis services")
+        document.save()
+
+        response = self.client.post(
+            "/api/v1/documents/extract",
+            files={"file": ("resume.pdf", pdf_buffer.getvalue(), "application/pdf")},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        extraction = response.json()["data"]
+        self.assertEqual(extraction["method"], "native")
+        self.assertEqual(extraction["page_count"], 1)
+        self.assertIn("Python", extraction["text"])
+
+        response = self.client.post(
+            "/api/v1/documents/extract",
+            files={"file": ("resume.txt", b"private resume", "text/plain")},
+        )
+        self.assert_error(response, 415, "unsupported_media_type")
+        self.assertNotIn("private resume", response.text)
+
     def test_failures_and_logs_do_not_expose_resume_contents(self):
         with patch("backend.app.api.routes.analysis.analyze_resume", side_effect=RuntimeError("sensitive-resume")):
             with self.assertLogs("resume.api", level="INFO") as logs:
@@ -199,6 +225,7 @@ class ResumeAnalysisAPITestCase(unittest.TestCase):
     def test_openapi_exposes_request_contracts(self):
         schema = self.client.get("/openapi.json").json()
         self.assertIn("/api/v1/reports/pdf", schema["paths"])
+        self.assertIn("/api/v1/documents/extract", schema["paths"])
         self.assertIn("resume_text", schema["components"]["schemas"]["AnalysisRequest"]["required"])
 
 

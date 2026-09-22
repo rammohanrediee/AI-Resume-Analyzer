@@ -13,6 +13,7 @@ class ProjectStructureTests(unittest.TestCase):
         self.assertTrue((backend_dir / "main.py").is_file())
         self.assertTrue((backend_dir / "api" / "server.py").is_file())
         self.assertTrue((backend_dir / "core" / "resume_analysis.py").is_file())
+        self.assertTrue((backend_dir / "services" / "pdf_extraction.py").is_file())
         self.assertTrue((backend_dir / "models" / "analysis.py").is_file())
         self.assertTrue((backend_dir / "schemas" / "analysis.py").is_file())
         self.assertTrue((frontend_dir / "app.py").is_file())

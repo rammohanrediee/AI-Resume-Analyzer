@@ -50,3 +50,27 @@ At the user’s request, moved all four trackers into the local project’s `doc
   optional embedding model was installed; live analysis smoke exercises lexical fallback.
 - Scope remaining: backend PDF boundary, PostgreSQL migration/integration, React frontend,
   deployment and measured portfolio results. Whole-project completion is not claimed.
+
+## 2026-09-22 — S1E2 backend PDF/OCR boundary
+
+- Moved framework-independent extraction into `backend/app/services/pdf_extraction.py`.
+  Streamlit keeps PDF preview responsibilities and calls the backend upload API for text.
+- Added `POST /api/v1/documents/extract` with multipart parsing, exact PDF media-type
+  validation, safe domain errors, worker-thread execution, and OpenAPI documentation.
+- Enforced 5 MiB file, 20-page document, five-page OCR, and 200,000-character output
+  limits. Multipart requests are bounded at 6 MiB before route processing.
+- Full command: `.venv/bin/coverage run --source=backend.app -m unittest discover -s tests -v`
+  followed by `.venv/bin/coverage report --fail-under=80`: 64 passed, no skips, 91%.
+- `.venv/bin/ruff check backend frontend scripts tests`: passed.
+  `.venv/bin/python -m pip check`: passed. `.venv/bin/pip-audit -r requirements.txt`:
+  passed with no known vulnerabilities reported. `git diff --check`: passed.
+- A real Uvicorn process with API-key authentication accepted a generated PDF through
+  `ResumeAnalyzerClient.extract_document`, returned native extracted text, and completed
+  analysis through the existing endpoint. The server was then terminated cleanly.
+- No hard wall-clock cancellation surrounds parser/OCR worker threads. File, page, OCR-page,
+  request, and text-output bounds constrain normal work; deployment-level request timeouts
+  remain a release requirement.
+- Docker was not repeated because the previously observed local daemon socket remains
+  unavailable. Hosted CI remains the container verification path.
+- S1E2 gate passed. Per user priority, S2E1 React work is next; S1E3 analytics/database
+  restructuring is deferred until the React core workflow is usable.

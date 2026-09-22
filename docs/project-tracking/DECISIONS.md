@@ -51,3 +51,18 @@ Synchronous analysis routes run in FastAPI's worker thread pool. Enforce actual 
 JSON body size before parsing, retain optional API-key authentication, and emit only
 sanitary operational metadata in request logs. The rate limiter is explicitly per process,
 not a distributed guarantee. React authentication and deployment design remain later work.
+
+## D12 — PDF extraction boundary and next priority
+
+Reuse the existing native-PDF and OCR behaviour through `POST /api/v1/documents/extract`
+instead of rebuilding the feature. The backend owns validation and processing, with a
+5 MiB PDF limit, 20-page limit, five-page OCR limit, and 200,000-character output limit.
+Streamlit remains compatible but now uses this API boundary. Build the React core flow
+next; defer analytics/database restructuring until that flow works end to end.
+
+## D13 — Headroom privacy boundary
+
+The user requested Headroom for longer tasks, but automatic approval review rejected
+sending repository-derived implementation details to that external service. Do not export
+private repository content through Headroom without approval that satisfies that review.
+Use the repository checkpoint documents and concise local command output for continuity.

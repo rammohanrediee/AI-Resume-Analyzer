@@ -5,7 +5,6 @@ import streamlit as st
 from ..api_client import BackendAPIError, ResumeAnalyzerClient
 from ..components.report import recommended_courses_for
 from ..components.styles import section_card
-from ..services.pdf_parser import extract_resume_text
 from ..services.storage import build_analysis_event
 
 
@@ -39,13 +38,13 @@ def render_candidate_page(database, client: ResumeAnalyzerClient):
         pdf_content = pdf_file.getvalue()
         with st.spinner("Reading your resume and comparing it with the role..."):
             try:
-                extraction = extract_resume_text(pdf_content)
+                extraction = client.extract_document(filename=pdf_file.name, pdf_bytes=pdf_content)
                 api_payload = {
                     "candidate_name": name,
-                    "resume_text": extraction.text,
+                    "resume_text": extraction["text"],
                     "resume_skills": [],
                     "job_description": job_description,
-                    "page_count": extraction.page_count,
+                    "page_count": extraction["page_count"],
                 }
                 analysis = client.analyze(**api_payload)
             except BackendAPIError as error:
@@ -72,19 +71,19 @@ def render_candidate_page(database, client: ResumeAnalyzerClient):
             "pdf_content": pdf_content,
             "api_payload": api_payload,
             "extraction": {
-                "method": extraction.method,
-                "page_count": extraction.page_count,
-                "ocr_pages": list(extraction.ocr_pages),
-                "warnings": list(extraction.warnings),
+                "method": extraction["method"],
+                "page_count": extraction["page_count"],
+                "ocr_pages": extraction["ocr_pages"],
+                "warnings": extraction["warnings"],
             },
         }
         st.session_state.nav_choice = "Results"
-        if extraction.warnings:
-            extraction_note = "with an extraction warning: " + " ".join(extraction.warnings)
-        elif extraction.method == "native":
+        if extraction["warnings"]:
+            extraction_note = "with an extraction warning: " + " ".join(extraction["warnings"])
+        elif extraction["method"] == "native":
             extraction_note = "using the PDF text layer"
         else:
-            pages = ", ".join(str(page) for page in extraction.ocr_pages)
+            pages = ", ".join(str(page) for page in extraction["ocr_pages"])
             extraction_note = f"using OCR on page(s) {pages}"
         st.session_state.analysis_notice = f"Analysis complete {extraction_note}."
         st.rerun()

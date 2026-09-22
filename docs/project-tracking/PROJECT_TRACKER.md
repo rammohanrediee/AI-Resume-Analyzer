@@ -32,15 +32,15 @@ Gate: a verified baseline exists in the correct checkout, with reproducible chec
 ## Season 1 — FastAPI and backend boundaries (active)
 
 - [x] **S1E1** Migrate existing HTTP endpoints to FastAPI with validated contracts and stable errors; preserve existing client behaviour where practical.
-- [ ] **S1E2 — Next** Move PDF extraction behind the backend boundary; enforce document size/page/resource limits and predictable malformed-file/OCR failures.
-- [ ] **S1E3** Move analytics database access behind the backend; preserve opt-in, privacy-minimized storage. Add schema migrations and real PostgreSQL integration verification.
+- [x] **S1E2** Move PDF extraction behind the backend boundary; enforce document size/page/resource limits and predictable malformed-file/OCR failures.
+- [ ] **S1E3 — Deferred until after React core flow** Move analytics database access behind the backend; preserve opt-in, privacy-minimized storage. Add schema migrations and real PostgreSQL integration verification.
 - [ ] **S1E4** Verify authentication configuration, request limits, sanitized logging, request IDs, and relevant failure paths.
 
 Gate: the core processing and analytics workflow runs through the backend, with real boundary tests and no unintended persistence of raw resumes.
 
-## Season 2 — React core workflow (pending)
+## Season 2 — React core workflow (active)
 
-- [ ] **S2E1** Scaffold React + JavaScript + Vite and agree the small set of UI/API contracts.
+- [ ] **S2E1 — Next** Scaffold React + JavaScript + Vite and agree the small set of UI/API contracts.
 - [ ] **S2E2** Implement resume upload and job-description input with validation and accessible form feedback.
 - [ ] **S2E3** Implement processing, errors, results, supporting evidence, skill gaps, and PDF report download.
 - [ ] **S2E4** Verify the complete browser-to-backend flow, repeated submissions, failed requests, keyboard use, and narrow screens.
@@ -70,7 +70,8 @@ New account systems, multi-tenancy, elaborate dashboards/animations, microservic
 
 ## Latest completed milestone
 
-S0 and S1E1: correct clean checkout at baseline `b3e819b`; 61 original tests passed.
-FastAPI migration passes 62 tests with 92% backend coverage, lint and dependency consistency.
-Request tracing and HTTP failure handling from S1E4 were implemented alongside migration;
-that episode stays open until the document-processing and persistence boundaries are ready.
+S0, S1E1, and S1E2 are complete. The FastAPI migration and bounded PDF/OCR upload
+boundary pass 64 tests with 91% backend coverage, lint, dependency consistency, and a
+real Uvicorn upload-to-analysis smoke test. S2E1 is active next by user priority; S1E3
+analytics restructuring resumes after the React core flow. S1E4 stays open until the
+remaining persistence and deployment boundaries are verified.

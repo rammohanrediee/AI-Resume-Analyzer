@@ -33,6 +33,9 @@ original project concept.
   behaviour while preserving the existing frontend client contract.
 - Added endpoints for complete analysis, JD gaps, bullet review, interview
   preparation, health checks, and PDF reports.
+- Moved PDF/OCR processing behind a bounded FastAPI upload endpoint while retaining
+  Streamlit compatibility. Added file-size, page-count, OCR-page, and extracted-text
+  limits with stable client-safe errors.
 - Added deterministic fallbacks so the core workflow works without downloading
   an embedding model.
 
@@ -83,7 +86,8 @@ original project concept.
 | `backend/` | Created as part of my re-architecture |
 | `frontend/api_client.py` | Created as part of my re-architecture |
 | `frontend/pages/` | Created as part of my re-architecture |
-| `frontend/services/pdf_parser.py` | Rebuilt as a native-text and page-level OCR extraction pipeline |
+| `backend/app/services/pdf_extraction.py` | Bounded native-text and page-level OCR extraction pipeline |
+| `frontend/services/pdf_parser.py` | Compatibility exports plus Streamlit-only PDF preview rendering |
 | `frontend/services/storage.py` | Rebuilt as opt-in, privacy-minimized anonymous analytics storage |
 | `frontend/components/report.py` | Created for the new report workflow |
 | `frontend/components/admin_dashboard.py` | Rebuilt from the upstream admin analytics concept |
@@ -92,5 +96,4 @@ original project concept.
 | `tests/` | Created for the re-architected application |
 | `Dockerfile`, `nixpacks.toml`, startup scripts | Created for deployment |
 | `LICENSE` | Retained upstream MIT license and copyright |
-
 

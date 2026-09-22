@@ -41,9 +41,9 @@ and file-level ownership map.
 
 ## Current development
 
-The FastAPI migration is complete; React + JavaScript + Vite is the planned frontend.
-Streamlit remains the working interface while backend extraction and analytics boundaries
-are upgraded. See [the current checkpoint](docs/project-tracking/CURRENT_CHECKPOINT.md)
+The FastAPI migration and backend PDF extraction boundary are complete; React + JavaScript
++ Vite is the planned frontend. Streamlit remains the working interface while the React
+workflow is built. See [the current checkpoint](docs/project-tracking/CURRENT_CHECKPOINT.md)
 and [project tracker](docs/project-tracking/PROJECT_TRACKER.md) for verified progress.
 
 ## Screenshots
@@ -54,7 +54,8 @@ and [project tracker](docs/project-tracking/PROJECT_TRACKER.md) for verified pro
 
 ## Highlights
 
-- Extracts text from digital and scanned PDF resumes, with page-level quality checks and OCR fallback.
+- Accepts bounded PDF uploads through FastAPI and extracts digital or scanned resumes,
+  with page-level quality checks and OCR fallback.
 - Parses name, contact details, education, skills, and actual PDF page count from the extracted text.
 - Scores expected resume sections and groups results into readable ATS categories.
 - Compares resumes with job descriptions using embeddings when available and deterministic lexical fallbacks otherwise.
@@ -71,7 +72,8 @@ and [project tracker](docs/project-tracking/PROJECT_TRACKER.md) for verified pro
 
 ```mermaid
 flowchart LR
-    A[Resume PDF] --> B[Native page extraction]
+    A[Resume PDF] --> API[FastAPI upload boundary]
+    API --> B[Native page extraction]
     B --> C{Text quality}
     C -->|Usable| D[Normalized page text]
     C -->|Weak or empty| E[Tesseract OCR]
@@ -145,7 +147,8 @@ sequenceDiagram
 | `backend/app/services` | Application-level analysis use cases |
 | `frontend/pages` | Candidate, results, admin, feedback, home, and about views |
 | `frontend/components` | Navigation, report rendering, styles, courses, and admin analytics |
-| `frontend/services` | PDF extraction and privacy-minimized SQLite/PostgreSQL analytics |
+| `backend/app/services` | Analysis use cases and bounded PDF/OCR extraction |
+| `frontend/services` | PDF preview and privacy-minimized SQLite/PostgreSQL analytics |
 | `tests` | Unit, API, architecture, package, and navigation checks |
 
 ## Getting started
@@ -255,6 +258,7 @@ bash start.sh           # Streamlit frontend
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/v1/health` | Service health check |
+| `POST` | `/api/v1/documents/extract` | Bounded PDF upload and text/OCR extraction |
 | `POST` | `/api/v1/analyses` | Complete resume and JD analysis |
 | `POST` | `/api/v1/analyses/bullet-quality` | Bullet-quality review |
 | `POST` | `/api/v1/analyses/jd-gap` | Categorized JD gap analysis |
@@ -264,6 +268,10 @@ bash start.sh           # Streamlit frontend
 Example:
 
 ```bash
+curl -X POST http://127.0.0.1:8001/api/v1/documents/extract \
+  -H "Authorization: Bearer $RESUME_API_KEY" \
+  -F "file=@resume.pdf;type=application/pdf"
+
 curl -X POST http://127.0.0.1:8001/api/v1/analyses \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $RESUME_API_KEY" \
@@ -286,7 +294,7 @@ coverage report -m --fail-under=80
 
 The test suite covers:
 
-- native PDF extraction and text normalization;
+- bounded API uploads, native PDF extraction and text normalization;
 - weak-page OCR selection and fallback behavior;
 - real image-only PDF extraction through Tesseract;
 - privacy-minimized persistence, hashed admin passwords, and deletion;

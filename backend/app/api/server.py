@@ -18,6 +18,7 @@ from starlette.exceptions import HTTPException
 from .routes.analysis import router
 
 MAX_REQUEST_BYTES = 2 * 1024 * 1024
+MAX_MULTIPART_REQUEST_BYTES = 6 * 1024 * 1024
 logger = logging.getLogger("resume.api")
 
 
@@ -120,15 +121,21 @@ class RequestBoundary:
                         receive,
                         tracked_send,
                     )
+                content_type = headers.get(b"content-type", b"")
+                request_limit = (
+                    MAX_MULTIPART_REQUEST_BYTES
+                    if content_type.startswith(b"multipart/form-data")
+                    else MAX_REQUEST_BYTES
+                )
                 body = bytearray()
-                if declared_size > MAX_REQUEST_BYTES:
+                if declared_size > request_limit:
                     return await self.too_large(scope, receive, tracked_send)
                 while True:
                     message = await receive()
                     if message["type"] == "http.disconnect":
                         return
                     body.extend(message.get("body", b""))
-                    if len(body) > MAX_REQUEST_BYTES:
+                    if len(body) > request_limit:
                         return await self.too_large(scope, receive, tracked_send)
                     if not message.get("more_body", False):
                         break
@@ -165,7 +172,7 @@ class RequestBoundary:
         await error_response(
             413,
             "payload_too_large",
-            f"Request body must not exceed {MAX_REQUEST_BYTES} bytes.",
+            "Request body exceeds the allowed size.",
         )(scope, receive, send)
 
 
@@ -197,12 +204,18 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, exc: HTTPException):
-        codes = {404: "not_found", 405: "method_not_allowed", 400: "invalid_request"}
-        messages = {404: "Endpoint not found.", 405: "Method not allowed.", 400: "Request could not be parsed."}
+        codes = {404: "not_found", 405: "method_not_allowed", 400: "invalid_request", 415: "unsupported_media_type"}
+        messages = {
+            404: "Endpoint not found.",
+            405: "Method not allowed.",
+            400: "Request could not be parsed.",
+            415: "Unsupported media type.",
+        }
+        detail = exc.detail if isinstance(exc.detail, dict) else {}
         return error_response(
             exc.status_code,
-            codes.get(exc.status_code, "http_error"),
-            messages.get(exc.status_code, "Request rejected."),
+            detail.get("code", codes.get(exc.status_code, "http_error")),
+            detail.get("message", messages.get(exc.status_code, "Request rejected.")),
             headers=exc.headers,
         )
 
