@@ -4,7 +4,7 @@ Updated: 2026-09-22
 
 ## Where we are
 
-**Season 0, S1E1, S1E2, and S2E1–S2E3 complete. S2E4 browser hardening is next.**
+**Season 0, S1E1, and S1E2 complete. S2E1 React scaffold and API client are next.**
 
 Canonical local checkout:
 `/Users/raghusmac/Documents/Backend_project/ai_reseme_cloned_version/AI-Resume-Analyzer-authoritative`
@@ -28,22 +28,14 @@ Baseline commit: `b3e819b3c7e5d7584cf1b5dad1bfc6e362178458`.
   persisted by this endpoint.
 - Current verification: 64 tests with no skips, 91% backend coverage, Ruff, pip check,
   pip-audit, diff checks, and a real Uvicorn upload-to-analysis smoke test all pass.
-- Added the React + JavaScript + Vite application in `web/`. It provides validated PDF/JD
-  input, staged processing feedback, evidence-backed results, ATS section scores, skill
-  gaps, responsive layouts, and PDF report download against the real FastAPI endpoints.
-- Added a controlled CORS boundary for local Vite origins and deployment configuration.
-  The browser client does not expose a private API key.
-- React lint, production build, and dependency audit pass. A synthetic PDF completed the
-  upload → extraction → analysis → results → report API flow in the browser; client-side
-  missing-file validation and narrow layout were inspected, with no console errors.
-- Database migration, complete S2E4 interaction coverage, deployment, and benchmarks are
-  not complete. Do not describe the entire project as finished.
+- React and database migration work are not complete. Do not describe the entire project
+  as finished.
 
 ## Exact next action
 
-S2E4: verify repeated submissions, backend failure recovery, keyboard order, PDF download
-behaviour, and explicit desktop/mobile breakpoints. Fix any defects found, then resume
-S1E3 opt-in analytics backend work.
+S2E1: scaffold React + JavaScript + Vite, add a small API client for health, document
+extraction, analysis and report download, then build the upload/job-description workflow.
+After the React core flow works, resume S1E3 opt-in analytics backend work.
 
 ## Preserved work and tooling
 

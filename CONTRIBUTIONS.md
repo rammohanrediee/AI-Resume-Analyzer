@@ -86,7 +86,6 @@ original project concept.
 | `backend/` | Created as part of my re-architecture |
 | `frontend/api_client.py` | Created as part of my re-architecture |
 | `frontend/pages/` | Created as part of my re-architecture |
-| `web/` | React + JavaScript + Vite application created for the browser workflow |
 | `backend/app/services/pdf_extraction.py` | Bounded native-text and page-level OCR extraction pipeline |
 | `frontend/services/pdf_parser.py` | Compatibility exports plus Streamlit-only PDF preview rendering |
 | `frontend/services/storage.py` | Rebuilt as opt-in, privacy-minimized anonymous analytics storage |

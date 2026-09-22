@@ -41,9 +41,9 @@ and file-level ownership map.
 
 ## Current development
 
-The FastAPI migration, backend PDF extraction boundary, and first React + JavaScript +
-Vite workflow are complete. Streamlit remains available while the React workflow is
-hardened and prepared for deployment. See [the current checkpoint](docs/project-tracking/CURRENT_CHECKPOINT.md)
+The FastAPI migration and backend PDF extraction boundary are complete; React + JavaScript
++ Vite is the planned frontend. Streamlit remains the working interface while the React
+workflow is built. See [the current checkpoint](docs/project-tracking/CURRENT_CHECKPOINT.md)
 and [project tracker](docs/project-tracking/PROJECT_TRACKER.md) for verified progress.
 
 ## Screenshots
@@ -144,10 +144,10 @@ sequenceDiagram
 |---|---|
 | `backend/app/core` | Parsing, normalization, scoring, matching, evidence mapping, interview prompts, and PDF generation |
 | `backend/app/api` | HTTP routing, input validation, error contracts, and response serialization |
-| `backend/app/services` | Analysis use cases and bounded PDF/OCR extraction |
-| `web` | React + JavaScript browser workflow and FastAPI client |
+| `backend/app/services` | Application-level analysis use cases |
 | `frontend/pages` | Candidate, results, admin, feedback, home, and about views |
 | `frontend/components` | Navigation, report rendering, styles, courses, and admin analytics |
+| `backend/app/services` | Analysis use cases and bounded PDF/OCR extraction |
 | `frontend/services` | PDF preview and privacy-minimized SQLite/PostgreSQL analytics |
 | `tests` | Unit, API, architecture, package, and navigation checks |
 
@@ -157,7 +157,6 @@ sequenceDiagram
 
 - Python 3.11 or newer
 - `pip` and `venv`
-- Node.js 22 and npm for the React application
 - Tesseract 5 with English language data for scanned or image-only PDFs
 
 On macOS:
@@ -211,7 +210,6 @@ cp .env.example .env
 | `API_HOST`, `PORT` | No | Backend bind address and port |
 | `RESUME_API_KEY` | No | Enables bearer-token authentication for API POST requests |
 | `API_RATE_LIMIT_PER_MINUTE` | No | Per-client POST request limit; defaults to 60 |
-| `CORS_ALLOW_ORIGINS` | No | Comma-separated browser origins; defaults to local Vite development origins |
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` | No | Admin login using a salted scrypt password hash |
 
 Never commit `.env`, `.streamlit/secrets.toml`, uploaded resumes, or local database files. They are excluded through `.gitignore`.
@@ -231,26 +229,14 @@ source .venv/bin/activate
 python -m backend.app.main
 ```
 
-Start the React application in a second terminal:
-
-```bash
-cd web
-npm install
-npm run dev
-```
-
-Open `http://127.0.0.1:5173`. Vite proxies `/api` to the backend during local
-development. Set `VITE_API_BASE_URL` when the deployed browser app calls a backend at a
-different origin, and add that exact origin to `CORS_ALLOW_ORIGINS` on the backend.
-
-The existing Streamlit interface remains available during the transition:
+Start Streamlit in a second terminal:
 
 ```bash
 source .venv/bin/activate
 streamlit run app.py
 ```
 
-Open `http://localhost:8501` for Streamlit. The API listens on `http://127.0.0.1:8001` by default.
+Open `http://localhost:8501`. The API listens on `http://127.0.0.1:8001` by default.
 FastAPI provides interactive API documentation at `http://127.0.0.1:8001/docs` and
 the request/response schema at `/openapi.json`. Existing v1 URLs and the `data`/`error`
 envelopes remain compatible with the Streamlit client.
@@ -265,14 +251,6 @@ The helper scripts launch each process independently:
 ```bash
 bash start-backend.sh   # API
 bash start.sh           # Streamlit frontend
-```
-
-Validate the React application with:
-
-```bash
-cd web
-npm run lint
-npm run build
 ```
 
 ## API

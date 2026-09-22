@@ -40,10 +40,10 @@ Gate: the core processing and analytics workflow runs through the backend, with 
 
 ## Season 2 — React core workflow (active)
 
-- [x] **S2E1** Scaffold React + JavaScript + Vite and agree the small set of UI/API contracts.
-- [x] **S2E2** Implement resume upload and job-description input with validation and accessible form feedback.
-- [x] **S2E3** Implement processing, errors, results, supporting evidence, skill gaps, and PDF report download.
-- [ ] **S2E4 — Next** Verify the complete browser-to-backend flow, repeated submissions, failed requests, keyboard use, and narrow screens.
+- [ ] **S2E1 — Next** Scaffold React + JavaScript + Vite and agree the small set of UI/API contracts.
+- [ ] **S2E2** Implement resume upload and job-description input with validation and accessible form feedback.
+- [ ] **S2E3** Implement processing, errors, results, supporting evidence, skill gaps, and PDF report download.
+- [ ] **S2E4** Verify the complete browser-to-backend flow, repeated submissions, failed requests, keyboard use, and narrow screens.
 
 Gate: the React UI completes upload → analysis → results → report download against the actual backend. Streamlit remains available during transition; administrative UI migration is not required for the first release.
 
@@ -70,9 +70,8 @@ New account systems, multi-tenancy, elaborate dashboards/animations, microservic
 
 ## Latest completed milestone
 
-S0, S1E1, S1E2, and S2E1–S2E3 are complete. The React application now runs the real
-upload → extraction → analysis → evidence/results → PDF-report flow. React lint/build and
-dependency audit pass; 64 backend tests pass with 91% coverage; a synthetic PDF completed
-the workflow in a real browser with no console errors. S2E4 verification is next, followed
-by S1E3 analytics restructuring. S1E4 stays open until persistence and deployment
-boundaries are verified.
+S0, S1E1, and S1E2 are complete. The FastAPI migration and bounded PDF/OCR upload
+boundary pass 64 tests with 91% backend coverage, lint, dependency consistency, and a
+real Uvicorn upload-to-analysis smoke test. S2E1 is active next by user priority; S1E3
+analytics restructuring resumes after the React core flow. S1E4 stays open until the
+remaining persistence and deployment boundaries are verified.

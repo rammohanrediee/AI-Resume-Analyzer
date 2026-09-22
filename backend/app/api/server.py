@@ -12,7 +12,6 @@ from uuid import uuid4
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
@@ -179,27 +178,11 @@ class RequestBoundary:
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Resume Analysis API", version="1.0.0")
-    allowed_origins = [
-        origin.strip()
-        for origin in os.getenv(
-            "CORS_ALLOW_ORIGINS",
-            "http://localhost:5173,http://127.0.0.1:5173",
-        ).split(",")
-        if origin.strip()
-    ]
     app.state.rate_limiter = RequestRateLimiter(
         limit=int(os.getenv("API_RATE_LIMIT_PER_MINUTE", "60")),
         window_seconds=60,
     )
     app.add_middleware(RequestBoundary, limiter=app.state.rate_limiter)
-    # Added last so CORS wraps boundary-generated 401/413/429 responses too.
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=allowed_origins,
-        allow_credentials=False,
-        allow_methods=["GET", "POST"],
-        allow_headers=["Accept", "Authorization", "Content-Type"],
-    )
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request: Request, exc: RequestValidationError):

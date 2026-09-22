@@ -66,11 +66,3 @@ The user requested Headroom for longer tasks, but automatic approval review reje
 sending repository-derived implementation details to that external service. Do not export
 private repository content through Headroom without approval that satisfies that review.
 Use the repository checkpoint documents and concise local command output for continuity.
-
-## D14 — React browser boundary
-
-The first React release lives in `web/` and uses JavaScript with Vite. During local
-development Vite proxies `/api` to FastAPI. Cross-origin deployments must set the exact
-browser origins through `CORS_ALLOW_ORIGINS`; wildcard origins are not enabled. The browser
-does not receive a private API key. Deployment should use a same-origin reverse proxy or
-another server-side authentication boundary if POST authentication is enabled.
