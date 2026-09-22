@@ -28,7 +28,7 @@ class ProjectStructureTests(unittest.TestCase):
         from backend.app import main
         from backend.app.core import matching, parser, resume_analysis
 
-        self.assertTrue(callable(main.create_server))
+        self.assertTrue(callable(main.create_app))
         self.assertTrue(callable(matching.compute_semantic_matches))
         self.assertTrue(callable(parser.parse_resume_document))
         self.assertTrue(callable(resume_analysis.build_full_analysis))

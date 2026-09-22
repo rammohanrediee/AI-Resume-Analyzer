@@ -3,12 +3,12 @@ import unittest
 
 class ArchitectureTests(unittest.TestCase):
     def test_backend_layers_are_importable(self):
-        from backend.app.main import create_server
+        from backend.app.main import create_app
         from backend.app.models.analysis import AnalysisRecord
         from backend.app.schemas.analysis import AnalysisRequest
         from backend.app.services.analysis_service import analyze_resume
 
-        self.assertTrue(callable(create_server))
+        self.assertTrue(callable(create_app))
         self.assertTrue(callable(analyze_resume))
         self.assertEqual(AnalysisRequest(resume_text="Text").resume_text, "Text")
         self.assertEqual(AnalysisRecord(candidate_name="Asha").candidate_name, "Asha")

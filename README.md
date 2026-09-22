@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Tests](https://github.com/rammohanrediee/AI-Resume-Analyzer/actions/workflows/tests.yml/badge.svg)](https://github.com/rammohanrediee/AI-Resume-Analyzer/actions/workflows/tests.yml)
 
-AI Resume Analyzer is a portfolio-grade Streamlit application and HTTP API that compares a resume with a target job description. It combines deterministic parsing, ATS-style checks, optional semantic matching, evidence-backed requirement mapping, improvement guidance, and downloadable PDF reporting.
+AI Resume Analyzer is a portfolio-grade Streamlit application and FastAPI service that compares a resume with a target job description. It combines deterministic parsing, ATS-style checks, optional semantic matching, evidence-backed requirement mapping, improvement guidance, and downloadable PDF reporting.
 
 The application is designed as a decision-support tool. Its scores and suggestions help candidates review a resume; they do not reproduce a specific employer's ATS or guarantee an interview.
 
@@ -38,6 +38,13 @@ application. I created or rebuilt:
 
 See [CONTRIBUTIONS.md](CONTRIBUTIONS.md) for the upstream-to-current comparison
 and file-level ownership map.
+
+## Current development
+
+The FastAPI migration is complete; React + JavaScript + Vite is the planned frontend.
+Streamlit remains the working interface while backend extraction and analytics boundaries
+are upgraded. See [the current checkpoint](docs/project-tracking/CURRENT_CHECKPOINT.md)
+and [project tracker](docs/project-tracking/PROJECT_TRACKER.md) for verified progress.
 
 ## Screenshots
 
@@ -227,6 +234,14 @@ streamlit run app.py
 ```
 
 Open `http://localhost:8501`. The API listens on `http://127.0.0.1:8001` by default.
+FastAPI provides interactive API documentation at `http://127.0.0.1:8001/docs` and
+the request/response schema at `/openapi.json`. Existing v1 URLs and the `data`/`error`
+envelopes remain compatible with the Streamlit client.
+
+The API validates field types, enforces the 2 MiB JSON body limit even without a
+Content-Length header, and returns `X-Request-ID` on responses. Structured logs contain
+only the generated request ID, method, matched route template, status and duration.
+No raw paths, query strings, resume contents or credentials are logged by the API boundary.
 
 The helper scripts launch each process independently:
 
@@ -325,8 +340,9 @@ For non-local deployments:
 - The tool does not emulate proprietary ATS ranking algorithms.
 - Suggested bullet rewrites require human verification; users should never add unsupported metrics.
 - Semantic results depend on the quality and specificity of both the resume and JD.
-- The built-in API server targets local and lightweight demo deployments. Put
-  it behind a TLS-terminating reverse proxy for any public use.
+- The API runs on Uvicorn. Use TLS and deployment-level resource limits for public use.
+  The in-memory rate limiter is per process; multi-worker deployments need a shared
+  gateway limiter. Proxy headers are deliberately not trusted by the CLI launcher.
 
 ## Contributing
 

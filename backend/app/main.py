@@ -1,9 +1,9 @@
-"""Backend server entry point."""
+"""Backend ASGI application and CLI entry point."""
 
-from .api.server import create_server, run
+from .api.server import create_app, run
 
-__all__ = ["create_server", "run"]
-
+app = create_app()
+__all__ = ["app", "create_app", "run"]
 
 if __name__ == "__main__":
     run()

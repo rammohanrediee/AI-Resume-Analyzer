@@ -27,7 +27,10 @@ original project concept.
 
 - Split analysis behavior into `backend/app/core`, `services`, `schemas`,
   `models`, and `api`.
-- Added a versioned JSON HTTP API with consistent success and error payloads.
+- Added a versioned JSON HTTP API with consistent success and error payloads; migrated
+  its server to FastAPI/Uvicorn with strict input schemas and generated OpenAPI documentation.
+- Added bounded streamed request handling, generated request IDs, and sanitized error/log
+  behaviour while preserving the existing frontend client contract.
 - Added endpoints for complete analysis, JD gaps, bullet review, interview
   preparation, health checks, and PDF reports.
 - Added deterministic fallbacks so the core workflow works without downloading

@@ -1,263 +1,213 @@
+"""FastAPI application and bounded, privacy-safe HTTP boundary."""
+
 import json
+import logging
 import os
 import secrets
 import threading
 import time
-from collections import defaultdict, deque
-from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from collections import OrderedDict, deque
+from uuid import uuid4
 
-from ..core.resume_analysis import (
-    analyze_bullet_quality,
-    as_json,
-    build_api_payload,
-    build_gap_explainer,
-    build_pdf_report_bytes,
-    generate_interview_prep,
-)
+import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException
+
+from .routes.analysis import router
 
 MAX_REQUEST_BYTES = 2 * 1024 * 1024
+logger = logging.getLogger("resume.api")
+
+
+def error_response(status, code, message, details=None, headers=None):
+    return JSONResponse(
+        {"error": {"code": code, "message": message, "details": details or []}},
+        status_code=status,
+        headers=headers,
+    )
 
 
 class RequestRateLimiter:
-    def __init__(self, limit: int, window_seconds: int):
+    """Per-process limiter; expired clients are discarded and memory is bounded."""
+
+    def __init__(self, limit: int, window_seconds: int, max_clients: int = 10000):
         self.limit = limit
         self.window_seconds = window_seconds
-        self._requests = defaultdict(deque)
+        self.max_clients = max_clients
+        self._requests = OrderedDict()
         self._lock = threading.Lock()
 
     def allow(self, client_id: str, now: float | None = None) -> bool:
         current_time = time.monotonic() if now is None else now
         cutoff = current_time - self.window_seconds
         with self._lock:
+            while self._requests:
+                first = next(iter(self._requests))
+                if self._requests[first][-1] > cutoff:
+                    break
+                self._requests.pop(first)
+            if client_id not in self._requests:
+                if len(self._requests) >= self.max_clients:
+                    return False
+                self._requests[client_id] = deque()
             requests = self._requests[client_id]
             while requests and requests[0] <= cutoff:
                 requests.popleft()
             if len(requests) >= self.limit:
                 return False
             requests.append(current_time)
+            self._requests.move_to_end(client_id)
             return True
 
 
-RATE_LIMITER = RequestRateLimiter(
-    limit=int(os.getenv("API_RATE_LIMIT_PER_MINUTE", "60")),
-    window_seconds=60,
-)
+class RequestBoundary:
+    """Bound actual request bytes before parsing, including chunked requests.
+
+    Generate request IDs locally and log only method, matched route, status and
+    duration. Never log raw paths, query strings, bodies or exception messages.
+    """
+
+    def __init__(self, app, limiter):
+        self.app = app
+        self.limiter = limiter
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        request_id = uuid4().hex
+        scope.setdefault("state", {})["request_id"] = request_id
+        started = time.monotonic()
+        status = 500
+        response_started = False
+
+        async def tracked_send(message):
+            nonlocal status, response_started
+            if message["type"] == "http.response.start":
+                status = message["status"]
+                response_started = True
+                message["headers"] = list(message.get("headers", [])) + [(b"x-request-id", request_id.encode())]
+            await send(message)
+
+        try:
+            if scope["method"] == "POST":
+                client = scope.get("client")
+                if not self.limiter.allow(client[0] if client else "unknown"):
+                    return await error_response(
+                        429,
+                        "rate_limited",
+                        "Too many requests. Try again shortly.",
+                        headers={"Retry-After": str(self.limiter.window_seconds)},
+                    )(scope, receive, tracked_send)
+                headers = dict(scope["headers"])
+                configured_key = os.getenv("RESUME_API_KEY", "")
+                token = headers.get(b"authorization", b"")
+                if configured_key and not secrets.compare_digest(token, b"Bearer " + configured_key.encode()):
+                    return await error_response(
+                        401,
+                        "unauthorized",
+                        "A valid bearer token is required.",
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )(scope, receive, tracked_send)
+                try:
+                    declared_size = int(headers.get(b"content-length", b"0"))
+                    if declared_size < 0:
+                        raise ValueError
+                except ValueError:
+                    return await error_response(400, "invalid_request", "Invalid Content-Length.")(
+                        scope,
+                        receive,
+                        tracked_send,
+                    )
+                body = bytearray()
+                if declared_size > MAX_REQUEST_BYTES:
+                    return await self.too_large(scope, receive, tracked_send)
+                while True:
+                    message = await receive()
+                    if message["type"] == "http.disconnect":
+                        return
+                    body.extend(message.get("body", b""))
+                    if len(body) > MAX_REQUEST_BYTES:
+                        return await self.too_large(scope, receive, tracked_send)
+                    if not message.get("more_body", False):
+                        break
+
+                async def replay():
+                    return {"type": "http.request", "body": bytes(body), "more_body": False}
+
+                await self.app(scope, replay, tracked_send)
+            else:
+                await self.app(scope, receive, tracked_send)
+        except Exception:
+            if response_started:
+                raise
+            await error_response(500, "internal_error", "The request could not be completed.")(
+                scope,
+                receive,
+                tracked_send,
+            )
+        finally:
+            route = scope.get("route")
+            logger.info(
+                json.dumps(
+                    {
+                        "request_id": request_id,
+                        "method": scope["method"],
+                        "route": getattr(route, "path", "unmatched"),
+                        "status": status,
+                        "duration_ms": round((time.monotonic() - started) * 1000, 2),
+                    }
+                )
+            )
+
+    async def too_large(self, scope, receive, send):
+        await error_response(
+            413,
+            "payload_too_large",
+            f"Request body must not exceed {MAX_REQUEST_BYTES} bytes.",
+        )(scope, receive, send)
 
 
-def success_response(handler: BaseHTTPRequestHandler, data, status=HTTPStatus.OK, content_type="application/json"):
-    payload = data if content_type != "application/json" else {"data": data}
-    body = data if isinstance(data, bytes) else as_json(payload)
-    handler.send_response(status)
-    handler.send_header("Content-Type", content_type)
-    handler.send_header("Content-Length", str(len(body)))
-    handler.end_headers()
-    handler.wfile.write(body)
-
-
-def error_response(handler: BaseHTTPRequestHandler, status: HTTPStatus, code: str, message: str, details=None):
-    body = as_json(
-        {
-            "error": {
-                "code": code,
-                "message": message,
-                "details": details or [],
-            }
-        }
+def create_app() -> FastAPI:
+    app = FastAPI(title="Resume Analysis API", version="1.0.0")
+    app.state.rate_limiter = RequestRateLimiter(
+        limit=int(os.getenv("API_RATE_LIMIT_PER_MINUTE", "60")),
+        window_seconds=60,
     )
-    handler.send_response(status)
-    handler.send_header("Content-Type", "application/json")
-    handler.send_header("Content-Length", str(len(body)))
-    handler.end_headers()
-    handler.wfile.write(body)
+    app.add_middleware(RequestBoundary, limiter=app.state.rate_limiter)
 
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request: Request, exc: RequestValidationError):
+        errors = exc.errors()
+        if any(error["type"] == "json_invalid" for error in errors):
+            return error_response(400, "invalid_json", "Request body must be valid JSON.")
+        if any(error["type"] in {"model_attributes_type", "model_type"} for error in errors):
+            return error_response(400, "invalid_request", "Request body must be a JSON object.")
+        # Pydantic errors may include raw input and context: return neither.
+        details = [
+            {
+                "field": ".".join(str(part) for part in error["loc"][1:]),
+                "code": error["type"],
+                "message": "This field is required." if error["type"] == "missing" else "Invalid field value.",
+            }
+            for error in errors
+        ]
+        return error_response(422, "validation_error", "Request validation failed.", details)
 
-def parse_json_body(handler: BaseHTTPRequestHandler):
-    content_length = int(handler.headers.get("Content-Length", "0"))
-    if content_length > MAX_REQUEST_BYTES:
-        return None, {
-            "status": HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
-            "code": "payload_too_large",
-            "message": f"Request body must not exceed {MAX_REQUEST_BYTES} bytes.",
-        }
-    raw_body = handler.rfile.read(content_length) if content_length else b"{}"
-    try:
-        body = json.loads(raw_body.decode("utf-8") or "{}")
-    except json.JSONDecodeError:
-        return None, {
-            "status": HTTPStatus.BAD_REQUEST,
-            "code": "invalid_json",
-            "message": "Request body must be valid JSON.",
-        }
-    if not isinstance(body, dict):
-        return None, {
-            "status": HTTPStatus.BAD_REQUEST,
-            "code": "invalid_request",
-            "message": "Request body must be a JSON object.",
-        }
-    return body, None
+    @app.exception_handler(HTTPException)
+    async def http_error(request: Request, exc: HTTPException):
+        codes = {404: "not_found", 405: "method_not_allowed", 400: "invalid_request"}
+        messages = {404: "Endpoint not found.", 405: "Method not allowed.", 400: "Request could not be parsed."}
+        return error_response(
+            exc.status_code,
+            codes.get(exc.status_code, "http_error"),
+            messages.get(exc.status_code, "Request rejected."),
+            headers=exc.headers,
+        )
 
-
-def require_fields(body, fields):
-    missing = [field for field in fields if not body.get(field)]
-    if missing:
-        return {
-            "status": HTTPStatus.UNPROCESSABLE_ENTITY,
-            "code": "validation_error",
-            "message": "Request validation failed.",
-            "details": [{"field": field, "message": "This field is required.", "code": "required"} for field in missing],
-        }
-    return None
-
-
-class ResumeAnalysisAPIHandler(BaseHTTPRequestHandler):
-    server_version = "ResumeAnalysisAPI/1.0"
-
-    def log_message(self, format, *args):
-        return
-
-    def do_GET(self):
-        parsed = urlparse(self.path)
-        if parsed.path == "/api/v1/health":
-            return success_response(
-                self,
-                {
-                    "status": "ok",
-                    "service": "resume-analysis-api",
-                    "version": "v1",
-                },
-            )
-        return error_response(self, HTTPStatus.NOT_FOUND, "not_found", "Endpoint not found.")
-
-    def do_POST(self):
-        parsed = urlparse(self.path)
-        if not RATE_LIMITER.allow(self.client_address[0]):
-            return error_response(
-                self,
-                HTTPStatus.TOO_MANY_REQUESTS,
-                "rate_limited",
-                "Too many requests. Try again shortly.",
-            )
-        configured_key = os.getenv("RESUME_API_KEY", "")
-        supplied_token = self.headers.get("Authorization", "").removeprefix("Bearer ").strip()
-        if configured_key and not secrets.compare_digest(supplied_token, configured_key):
-            return error_response(
-                self,
-                HTTPStatus.UNAUTHORIZED,
-                "unauthorized",
-                "A valid bearer token is required.",
-            )
-        body, parse_error = parse_json_body(self)
-        if parse_error:
-            return error_response(self, parse_error["status"], parse_error["code"], parse_error["message"])
-        page_count = body.get("page_count")
-        if page_count is not None and (
-            isinstance(page_count, bool)
-            or not isinstance(page_count, int)
-            or not 1 <= page_count <= 100
-        ):
-            return error_response(
-                self,
-                HTTPStatus.UNPROCESSABLE_ENTITY,
-                "validation_error",
-                "page_count must be an integer between 1 and 100.",
-                [{"field": "page_count", "code": "invalid"}],
-            )
-
-        if parsed.path == "/api/v1/analyses":
-            validation_error = require_fields(body, ["resume_text"])
-            if validation_error:
-                return error_response(
-                    self,
-                    validation_error["status"],
-                    validation_error["code"],
-                    validation_error["message"],
-                    validation_error["details"],
-                )
-            analysis = build_api_payload(
-                resume_text=body.get("resume_text", ""),
-                resume_skills=body.get("resume_skills", []),
-                job_description=body.get("job_description", ""),
-                candidate_name=body.get("candidate_name", "Candidate"),
-                page_count=body.get("page_count"),
-            )
-            return success_response(self, analysis)
-
-        if parsed.path == "/api/v1/analyses/bullet-quality":
-            validation_error = require_fields(body, ["resume_text"])
-            if validation_error:
-                return error_response(
-                    self,
-                    validation_error["status"],
-                    validation_error["code"],
-                    validation_error["message"],
-                    validation_error["details"],
-                )
-            return success_response(self, analyze_bullet_quality(body["resume_text"]))
-
-        if parsed.path == "/api/v1/analyses/jd-gap":
-            validation_error = require_fields(body, ["resume_text", "job_description"])
-            if validation_error:
-                return error_response(
-                    self,
-                    validation_error["status"],
-                    validation_error["code"],
-                    validation_error["message"],
-                    validation_error["details"],
-                )
-            return success_response(
-                self,
-                build_gap_explainer(body["job_description"], body["resume_text"], body.get("resume_skills", [])),
-            )
-
-        if parsed.path == "/api/v1/analyses/interview-prep":
-            validation_error = require_fields(body, ["job_description"])
-            if validation_error:
-                return error_response(
-                    self,
-                    validation_error["status"],
-                    validation_error["code"],
-                    validation_error["message"],
-                    validation_error["details"],
-                )
-            role_title = body.get("role_title", "target role")
-            return success_response(
-                self,
-                generate_interview_prep(body["job_description"], body.get("resume_skills", []), role_title),
-            )
-
-        if parsed.path == "/api/v1/reports/pdf":
-            validation_error = require_fields(body, ["resume_text"])
-            if validation_error:
-                return error_response(
-                    self,
-                    validation_error["status"],
-                    validation_error["code"],
-                    validation_error["message"],
-                    validation_error["details"],
-                )
-            analysis = build_api_payload(
-                resume_text=body.get("resume_text", ""),
-                resume_skills=body.get("resume_skills", []),
-                job_description=body.get("job_description", ""),
-                candidate_name=body.get("candidate_name", "Candidate"),
-                page_count=body.get("page_count"),
-            )
-            report_bytes = build_pdf_report_bytes("Resume Analysis Report", analysis)
-            self.send_response(HTTPStatus.OK)
-            self.send_header("Content-Type", "application/pdf")
-            self.send_header("Content-Disposition", 'attachment; filename="resume-analysis-report.pdf"')
-            self.send_header("Content-Length", str(len(report_bytes)))
-            self.end_headers()
-            self.wfile.write(report_bytes)
-            return
-
-        return error_response(self, HTTPStatus.NOT_FOUND, "not_found", "Endpoint not found.")
-
-
-def create_server(host="127.0.0.1", port=8001):
-    return ThreadingHTTPServer((host, port), ResumeAnalysisAPIHandler)
+    app.include_router(router)
+    return app
 
 
 def resolve_server_config() -> tuple[str, int]:
@@ -271,11 +221,14 @@ def resolve_server_config() -> tuple[str, int]:
 
 def run(host=None, port=None):
     configured_host, configured_port = resolve_server_config()
-    host = host or configured_host
-    port = port if port is not None else configured_port
-    server = create_server(host=host, port=port)
-    print(f"Resume Analysis API listening on http://{host}:{port}")
-    server.serve_forever()
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    uvicorn.run(
+        create_app(),
+        host=host or configured_host,
+        port=port if port is not None else configured_port,
+        access_log=False,
+        proxy_headers=False,
+    )
 
 
 if __name__ == "__main__":

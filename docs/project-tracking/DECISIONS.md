@@ -1,0 +1,53 @@
+# AI Resume Analyzer — Decisions
+
+## D01 — Repository authority
+
+Use `rammohanrediee/AI-Resume-Analyzer`, explicitly confirmed by the user. The supplied local folder's different remote must not override this decision.
+
+## D02 — Frontend
+
+Accepted 2026-09-22: React + JavaScript + Vite. No TypeScript migration in the first release. Explain JavaScript/React concepts through implementation walkthroughs.
+
+## D03 — Backend and transition
+
+Target FastAPI with PostgreSQL-backed, privacy-minimized analytics. Preserve existing analysis behaviour and keep Streamlit working while the core React flow is built. Verify actual baseline before deciding exact migrations.
+
+## D04 — Delivery pace
+
+The two-month target is an outer deadline, not eight mandatory weeks of development. Complete one verified release at a time. Do not promise a finish date before reproducing the baseline.
+
+## D05 — Ownership and positioning
+
+Resume Analyzer is an open-source extension/re-architecture. Retain upstream attribution and distinguish new changes in contribution documentation. Never claim from-scratch authorship, invented usage, benchmark improvements or test results.
+
+## D06 — Learning and implementation
+
+Codex handles authorized Resume Analyzer implementation and mechanical checks; the user gets milestone walkthroughs and small useful inspection exercises. PeerMock's separate guided-build rules are not copied as implementation restrictions into this project.
+
+## D07 — Headroom and progress
+
+Use available Headroom compression for large outputs where helpful. Retrieve original details when needed for exact code reasoning. Never treat compression as a substitute for saved checkpoints or verified evidence. Do not claim the running desktop task is proxy-routed when it is not.
+
+## D08 — Scope boundary
+
+First React release: upload, job description, processing/error feedback, results/evidence/gaps, and report download. Defer new accounts, elaborate administration, microservices and extra AI features. Preserve privacy controls as functionality moves between components.
+
+## D09 — Git and test discipline
+
+User explicitly authorized implementation and GitHub pushes on 2026-09-22. Use the existing
+main branch and coherent milestone commits; no unnecessary branches or tests. Durable
+execution rules live in the repository-root AGENTS.md.
+
+## D10 — Correct local checkout
+
+Work in `AI-Resume-Analyzer-authoritative` alongside the supplied older checkout. Origin
+is the confirmed rammohanrediee repository; never push to upstream. The old checkout's
+uncommitted matching changes remain preserved.
+
+## D11 — HTTP migration
+
+Preserve v1 URLs and success/error envelopes. Use Pydantic strict inputs and Uvicorn.
+Synchronous analysis routes run in FastAPI's worker thread pool. Enforce actual streamed
+JSON body size before parsing, retain optional API-key authentication, and emit only
+sanitary operational metadata in request logs. The rate limiter is explicitly per process,
+not a distributed guarantee. React authentication and deployment design remain later work.
