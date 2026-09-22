@@ -104,9 +104,15 @@ class ResumeAnalysisAPITestCase(unittest.TestCase):
 
     def test_rejects_request_larger_than_configured_limit(self):
         response = self.client.post(
-            "/api/v1/analyses", content=b"{}", headers={"Content-Length": str(MAX_REQUEST_BYTES + 1)}
+            "/api/v1/analyses",
+            content=b"{}",
+            headers={
+                "Content-Length": str(MAX_REQUEST_BYTES + 1),
+                "Origin": "http://localhost:5173",
+            },
         )
         self.assert_error(response, 413, "payload_too_large")
+        self.assertEqual(response.headers["access-control-allow-origin"], "http://localhost:5173")
         # No Content-Length: enforce the actual stream size, not just the header.
         chunks = (b"x" * (MAX_REQUEST_BYTES // 2) for _ in range(3))
         response = self.client.post("/api/v1/analyses", content=chunks)
@@ -227,6 +233,16 @@ class ResumeAnalysisAPITestCase(unittest.TestCase):
         self.assertIn("/api/v1/reports/pdf", schema["paths"])
         self.assertIn("/api/v1/documents/extract", schema["paths"])
         self.assertIn("resume_text", schema["components"]["schemas"]["AnalysisRequest"]["required"])
+
+        response = self.client.options(
+            "/api/v1/documents/extract",
+            headers={
+                "Origin": "http://localhost:5173",
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["access-control-allow-origin"], "http://localhost:5173")
 
 
 if __name__ == "__main__":

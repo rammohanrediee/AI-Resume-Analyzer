@@ -25,5 +25,5 @@
 - Start with docs/project-tracking/CURRENT_CHECKPOINT.md and PROJECT_TRACKER.md.
 - Update the tracker, checkpoint and verification log after each meaningful milestone. Record the exact next action and blockers. Keep one canonical tracker set in this repository.
 - Record durable decisions in docs/project-tracking/DECISIONS.md.
-- Use Headroom compression for large CLI outputs where helpful; retrieve originals for exact reasoning. Never claim proxy routing or savings that were not verified.
+- Automatic approval review rejected exporting repository-derived details to Headroom. Use the local tracker files and concise command output unless an approved privacy-safe path becomes available.
 - Give concise progress updates and milestone walkthroughs so the user can understand and explain the work.

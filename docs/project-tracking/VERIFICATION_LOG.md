@@ -74,3 +74,28 @@ At the user’s request, moved all four trackers into the local project’s `doc
   unavailable. Hosted CI remains the container verification path.
 - S1E2 gate passed. Per user priority, S2E1 React work is next; S1E3 analytics/database
   restructuring is deferred until the React core workflow is usable.
+
+## 2026-09-22 — S2E1–S2E3 React core workflow
+
+- Created `web/` with React 19, JavaScript, and Vite. The browser client calls document
+  extraction, analysis, and PDF report endpoints through a small fetch-based API module.
+- Implemented PDF and job-description validation, accessible status/error feedback,
+  processing states, evidence mapping, ATS section scores, detected skills, priority gaps,
+  responsive layout, and report download. No account or dashboard scope was added.
+- Added exact-origin FastAPI CORS configuration for local Vite development and deployment
+  environment overrides. Extended the existing API contract test with a CORS preflight.
+- `npm run lint`: passed. `npm run build`: passed with an approximately 228.6 kB JS bundle
+  (71.4 kB gzip) and 8.0 kB CSS bundle (2.5 kB gzip). `npm audit --audit-level=high`:
+  zero vulnerabilities reported.
+- Full backend verification remained green: Ruff passed; 64 tests passed with no skips;
+  backend coverage remained 91%; pip dependency consistency passed.
+- Real browser verification used a generated one-page, non-personal PDF and an example
+  backend job description. Upload, extraction, analysis, results rendering, and report API
+  request completed successfully. Missing-file validation focused the file control; the
+  narrow layout rendered without overflow; browser console warnings/errors were empty.
+- The browser automation download-event observer timed out even though FastAPI returned
+  the report request with HTTP 200 and the UI showed no error. S2E4 retains an explicit
+  manual/download-behaviour check plus repeated-submission, failure-recovery, and full
+  keyboard-order checks.
+- Added a CI web job using Node 22, `npm ci`, lint, and production build. Hosted evidence
+  for that new job is pending the milestone push.
