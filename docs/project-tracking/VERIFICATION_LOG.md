@@ -1,5 +1,12 @@
 # AI Resume Analyzer — Verification Log
 
+## 2026-09-22 — Replacement frontend specification
+
+- Read existing Streamlit report rendering and FastAPI route declarations; distinguished existing analysis features from proposed React session interactions.
+- Created root design.md and FRONTEND_PLAN.md; corrected the current checkout path in tracking files and recorded the React rollback.
+- Palette OKLCH values calculated from supplied hex colors. Responsive widths and interaction checks are acceptance criteria, not completed browser checks.
+- Documentation only: no frontend implementation, new tests, runtime changes or visual pass claimed.
+
 ## Existing evidence carried forward
 
 - Remote audit: confirmed repository is a fork of `deepakpadhi986/AI-Resume-Analyzer`; comparison at inspection showed 10 commits ahead, 0 behind and 95 changed files. This demonstrates differences, not individual authorship or quality by itself.
@@ -74,3 +81,38 @@ At the user’s request, moved all four trackers into the local project’s `doc
   unavailable. Hosted CI remains the container verification path.
 - S1E2 gate passed. Per user priority, S2E1 React work is next; S1E3 analytics/database
   restructuring is deferred until the React core workflow is usable.
+## 2026-09-22 — Replacement React workspace
+
+- `npm run lint`: passed with oxlint.
+- `npm run build`: passed with Vite 7.3.6; 35 modules transformed.
+- Real browser smoke at 1440 px: PDF upload → FastAPI extraction → analysis → Overview passed.
+- Real response rendered resume structure 41/100, JD similarity 50%, candidate level
+  Experienced and five backend-provided section scores; no demo metrics were fabricated.
+- Responsive browser inspection passed at 375 px for the Results view. The desktop rail
+  collapses to a compact application header and native view selector.
+
+## 2026-09-24 — Hallmark React redesign and S2E3 completion
+
+- Rebuilt upload and results around the Hallmark Workbench specification while preserving
+  React/Vite, FastAPI contracts, Streamlit, and real backend-derived content.
+- npm run lint: passed with oxlint.
+- npm run build: passed with Vite 7.3.6; 39 modules transformed.
+- Real local browser flow passed: selected a generated PDF, extracted it through FastAPI,
+  analyzed it, rendered results, and downloaded resume-lens-qa-analysis-report.pdf.
+- Results expose Overview, ATS Check, Suggestions, and Keywords without demo scores or
+  screenshot-only product claims. Report download and document replacement are wired.
+- Visual and overflow checks passed at 320, 375, 414, 768, 1024, 1280, and 1440 px.
+  Desktop and mobile upload/results screenshots were inspected under output/playwright/.
+- Mobile menu opens and closes with Escape. Keyboard focus on the visually hidden file
+  input produces a visible two-pixel outline on the upload control.
+- Results tabs use the WAI-ARIA tab pattern: from Suggestions, ArrowRight moved focus and
+  selection to Keywords and rendered the matching Keywords tabpanel.
+- Calculated contrast ratios: ink/paper 16.91:1; soft/paper 10.16:1;
+  muted/paper 5.37:1; accent-ink/accent 4.75:1; focus/paper 5.50:1;
+  warning-ink/warning-surface 9.10:1; error/error-surface 5.61:1.
+- Hallmark/static checks found no gradients, transition-all, 100vw, raw hex/RGB/HSL page
+  colors, italic headings, placeholder marketing cliches, or undefined CSS variables.
+  Runtime and portable token blocks match; JSON metadata and git diff whitespace validate.
+- Backend source was unchanged, so the full Python suite was not repeated for this visual
+  milestone. S2E4 remains open for repeated analyses, deliberate failures/late responses,
+  and zoom verification.

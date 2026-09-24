@@ -1,0 +1,80 @@
+/* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V5
+ * genre: modern-minimal · macrostructure: Workbench · designed-as-app
+ * theme: studied-DNA (source: user screenshots) · nav: N1b app variant · footer: Ft2
+ * tone: technical, calm, practical · anchor hue: indigo · enrichment: Tier-B document motif
+ */
+:root {
+  --color-paper: oklch(97.5% 0.009 277);
+  --color-paper-deep: oklch(94.5% 0.018 277);
+  --color-surface: oklch(99.2% 0.004 277);
+  --color-surface-strong: oklch(96.4% 0.014 277);
+  --color-ink: oklch(20% 0.045 274);
+  --color-ink-soft: oklch(36% 0.04 274);
+  --color-muted: oklch(51% 0.035 274);
+  --color-rule: oklch(88% 0.021 277);
+  --color-rule-strong: oklch(80% 0.035 277);
+  --color-accent: oklch(56% 0.22 278);
+  --color-accent-strong: oklch(47% 0.23 278);
+  --color-accent-soft: oklch(93.5% 0.04 278);
+  --color-accent-ink: oklch(98% 0.008 277);
+  --color-focus: oklch(52% 0.2 278);
+  --color-success: oklch(54% 0.145 153);
+  --color-success-surface: oklch(95% 0.035 153);
+  --color-warning: oklch(70% 0.17 75);
+  --color-warning-ink: oklch(38% 0.095 65);
+  --color-warning-surface: oklch(96% 0.04 82);
+  --color-error: oklch(50% 0.18 28);
+  --color-error-surface: oklch(95% 0.028 28);
+  --color-info: oklch(56% 0.17 244);
+  --color-info-surface: oklch(95% 0.03 244);
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-wordmark: 'Space Grotesk', sans-serif;
+
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.375rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.25rem;
+  --text-display: clamp(2.5rem, 5vw, 4rem);
+
+  --radius-control: 0.5rem;
+  --radius-card: 0.75rem;
+  --radius-panel: 1rem;
+  --radius-pill: 999px;
+  --rule-thin: 1px;
+  --rule-strong: 2px;
+  --shadow-panel: 0 1px 2px oklch(20% 0.045 274 / 0.05);
+  --shadow-raised: 0 1.5rem 3.5rem oklch(20% 0.045 274 / 0.08);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  --z-base: 1;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+
+  --page-max: 96rem;
+  --page-gutter: clamp(1rem, 3vw, 2.5rem);
+}

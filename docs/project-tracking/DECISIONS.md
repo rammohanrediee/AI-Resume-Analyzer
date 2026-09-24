@@ -40,7 +40,7 @@ execution rules live in the repository-root AGENTS.md.
 
 ## D10 — Correct local checkout
 
-Work in `AI-Resume-Analyzer-authoritative` alongside the supplied older checkout. Origin
+Work in the confirmed Backend_project/ai_reseme_cloned_version/AI-Resume-Analyzer checkout. Origin
 is the confirmed rammohanrediee repository; never push to upstream. The old checkout's
 uncommitted matching changes remain preserved.
 
@@ -60,9 +60,32 @@ instead of rebuilding the feature. The backend owns validation and processing, w
 Streamlit remains compatible but now uses this API boundary. Build the React core flow
 next; defer analytics/database restructuring until that flow works end to end.
 
+## D14 — Replacement frontend design and scope (2026-09-22)
+
+The user requested a plan and design.md before rebuilding React. Use React/JavaScript/Vite
+for an in-memory analysis workspace with evidence filters, editable inputs, reruns and
+latest-two-run comparison, reusing existing FastAPI analysis capabilities. Root design.md
+specifies the supplied Mirage/Blaze Orange/Deep Sea Green/Wild Sand palette and responsive
+workspace DNA. No template imagery, pricing or unrelated interview platform is included.
+The prior React build was reverted in 8dfc143. This historical visual direction was
+superseded by D15 when the user supplied the complete desktop/mobile reference set.
+
 ## D13 — Headroom privacy boundary
 
 The user requested Headroom for longer tasks, but automatic approval review rejected
 sending repository-derived implementation details to that external service. Do not export
 private repository content through Headroom without approval that satisfies that review.
 Use the repository checkpoint documents and concise local command output for continuity.
+
+## D15 — Hallmark responsive redesign and product truth (2026-09-24)
+
+Use a modern-minimal Hallmark Workbench with a cool-paper surface, restrained indigo accent,
+Space Grotesk/IBM Plex Sans typography, an N1b product header, a three-column upload canvas,
+and a split document/results workspace that stacks deliberately on mobile. Use original SVG
+interface artwork and real backend data only. Preserve the FastAPI and Streamlit paths.
+
+The screenshots are visual references, not permission to fabricate features. PDF upload,
+optional job description, real analysis sections, replace-document flow, and PDF report
+download are in scope. DOC/DOCX, cloud-drive imports, accounts/profile UI, dark mode,
+Templates/Pricing/Resources/Job Match pages, and automatic rewritten-resume download remain
+unsupported until a separate product and backend decision authorizes them.

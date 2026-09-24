@@ -1,6 +1,6 @@
 # AI Resume Analyzer — Project Tracker
 
-Updated: 2026-09-22
+Updated: 2026-09-24
 
 ## Target and source of truth
 
@@ -19,7 +19,7 @@ Read [CURRENT_CHECKPOINT.md](CURRENT_CHECKPOINT.md) first when resuming. See [DE
 - Record exact commands, results, limitations, and commit identifiers when available. Distinguish existing upstream features, newly implemented work, and proposed work.
 - Failed or unavailable checks stay visible; configuration alone does not prove a passing check.
 - End each working session with the exact next action and any concrete blocker.
-- These four documents in `docs/project-tracking/` are the canonical tracker set. They now live in the confirmed `AI-Resume-Analyzer-authoritative` checkout. The old checkout contains relocation notices only.
+- These four documents in `docs/project-tracking/` are the canonical tracker set, in the confirmed `AI-Resume-Analyzer` checkout. FRONTEND_PLAN.md details the replacement UI scope; root design.md defines its visual system.
 
 ## Season 0 — Confirmed baseline (complete)
 
@@ -40,9 +40,9 @@ Gate: the core processing and analytics workflow runs through the backend, with 
 
 ## Season 2 — React core workflow (active)
 
-- [ ] **S2E1 — Next** Scaffold React + JavaScript + Vite and agree the small set of UI/API contracts.
-- [ ] **S2E2** Implement resume upload and job-description input with validation and accessible form feedback.
-- [ ] **S2E3** Implement processing, errors, results, supporting evidence, skill gaps, and PDF report download.
+- [x] **S2E1** Scaffold React + JavaScript + Vite and agree the small set of UI/API contracts.
+- [x] **S2E2** Implement resume upload and job-description input with validation and accessible form feedback.
+- [x] **S2E3** Implement processing, errors, results, supporting evidence, skill gaps, and PDF report download.
 - [ ] **S2E4** Verify the complete browser-to-backend flow, repeated submissions, failed requests, keyboard use, and narrow screens.
 
 Gate: the React UI completes upload → analysis → results → report download against the actual backend. Streamlit remains available during transition; administrative UI migration is not required for the first release.
@@ -70,8 +70,16 @@ New account systems, multi-tenancy, elaborate dashboards/animations, microservic
 
 ## Latest completed milestone
 
-S0, S1E1, and S1E2 are complete. The FastAPI migration and bounded PDF/OCR upload
-boundary pass 64 tests with 91% backend coverage, lint, dependency consistency, and a
-real Uvicorn upload-to-analysis smoke test. S2E1 is active next by user priority; S1E3
-analytics restructuring resumes after the React core flow. S1E4 stays open until the
-remaining persistence and deployment boundaries are verified.
+2026-09-24: completed the Hallmark redesign of the React upload and results workflow in
+the confirmed checkout. The modern-minimal Workbench uses a restrained cool-paper/indigo
+system, responsive desktop/mobile compositions, original interface artwork, real API
+outputs, and no fabricated product features. PDF upload, optional job description,
+analysis, ATS/suggestion/keyword result views, replacement flow, and PDF report download
+are implemented.
+
+S0, S1E1, S1E2, S2E1, S2E2, and S2E3 are complete. Frontend lint and production build
+pass, the real browser upload-to-analysis-to-report flow passes, and inspected widths from
+320 through 1440 px have no horizontal overflow. S2E4 remains active for repeated-run,
+deliberate failure/late-response, and zoom verification. Results-tab ArrowRight navigation
+is browser-verified. S1E3 analytics
+restructuring resumes after the React core verification gate.
